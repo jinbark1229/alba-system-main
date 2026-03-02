@@ -134,17 +134,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             return { success: false, message: "로그인이 필요합니다." };
         }
 
-        const currentUser = users.find(u => u.id === user.id);
-        if (!currentUser) {
-            return { success: false, message: "사용자를 찾을 수 없습니다." };
-        }
-
-        if (currentUser.password !== currentPwd) {
-            return { success: false, message: "현재 비밀번호가 일치하지 않습니다." };
+        // 데모 계정은 비밀번호 변경 불가
+        if (user.id.startsWith('demo-')) {
+            return { success: false, message: "데모 계정의 비밀번호는 변경할 수 없습니다." };
         }
 
         if (newPwd.length < 4) {
             return { success: false, message: "새 비밀번호는 4자리 이상이어야 합니다." };
+        }
+
+        // Supabase에서 직접 현재 비밀번호 확인 (항상 최신 데이터)
+        const { data: dbUser, error: fetchError } = await supabase
+            .from('users')
+            .select('password')
+            .eq('id', user.id)
+            .single();
+
+        if (fetchError || !dbUser) {
+            return { success: false, message: "사용자를 찾을 수 없습니다." };
+        }
+
+        if (dbUser.password !== currentPwd) {
+            return { success: false, message: "현재 비밀번호가 일치하지 않습니다." };
         }
 
         const { error } = await supabase
