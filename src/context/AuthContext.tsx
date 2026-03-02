@@ -28,6 +28,7 @@ interface AuthContextProps {
     changePassword: (currentPwd: string, newPwd: string) => Promise<{ success: boolean; message: string }>;
     addUser: (newUser: Omit<User, "id">) => Promise<User>;
     removeUser: (userId: string) => Promise<void>;
+    resetPassword: (userName: string) => Promise<boolean>;
     listUsers: () => User[];
     addAllowedName: (name: string, role: "worker" | "manager" | "boss", storeId: "store1" | "store2" | "both") => Promise<{ success: boolean; code?: string }>;
     removeAllowedName: (name: string) => Promise<void>;
@@ -201,6 +202,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUsers(users.filter(u => u.id !== userId));
     };
 
+    const resetPassword = async (userName: string): Promise<boolean> => {
+        const defaultPwd = "1234";
+        const { error } = await supabase
+            .from('users')
+            .update({ password: defaultPwd })
+            .eq('name', userName);
+        if (error) return false;
+        setUsers(users.map(u => u.name === userName ? { ...u, password: defaultPwd } : u));
+        return true;
+    };
+
     const listUsers = () => users;
 
     const addAllowedName = async (name: string, role: "worker" | "manager" | "boss", storeId: "store1" | "store2" | "both"): Promise<{ success: boolean; code?: string }> => {
@@ -280,7 +292,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     return (
         <AuthContext.Provider value={{
-            user, login, logout, withdraw, changePassword, addUser, removeUser, listUsers,
+            user, login, logout, withdraw, changePassword, addUser, removeUser, resetPassword, listUsers,
             addAllowedName, removeAllowedName, getAllowedNames, isNameAllowed,
             validatePersonalCode, regenerateCode, validateRegistrationCode, isLoading
         }}>

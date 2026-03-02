@@ -5,7 +5,7 @@ import { useAuth, type AllowedName } from "../context/AuthContext";
 import { MainLayout } from "../components/layout";
 
 export default function AllowedNamesManagement() {
-    const { user, addAllowedName, removeAllowedName, getAllowedNames, listUsers, regenerateCode, isLoading } = useAuth();
+    const { user, addAllowedName, removeAllowedName, getAllowedNames, listUsers, regenerateCode, resetPassword, isLoading } = useAuth();
     const navigate = useNavigate();
 
     const [newName, setNewName] = useState("");
@@ -80,6 +80,17 @@ export default function AllowedNamesManagement() {
         if (window.confirm(message)) {
             removeAllowedName(name);
             alert(`"${name}"이(가) 제거되었습니다.`);
+        }
+    };
+
+    const handleResetPassword = async (name: string) => {
+        if (window.confirm(`"${name}"님의 비밀번호를 "1234"로 초기화하시겠습니까?`)) {
+            const ok = await resetPassword(name);
+            if (ok) {
+                alert(`"${name}"님의 비밀번호가 "1234"로 초기화되었습니다.\n\n직원에게 초기 비밀번호(1234)를 안내해주세요.`);
+            } else {
+                alert("비밀번호 초기화에 실패했습니다.");
+            }
         }
     };
 
@@ -245,12 +256,24 @@ export default function AllowedNamesManagement() {
                                             )}
                                         </td>
                                         <td className="py-4 px-6 text-right">
-                                            <button
-                                                onClick={() => handleRemove(item.name)}
-                                                className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium hover:underline transition-colors"
-                                            >
-                                                제거
-                                            </button>
+                                            <div className="flex items-center justify-end gap-3">
+                                                {isUserRegistered(item.name) && (
+                                                    <button
+                                                        onClick={() => handleResetPassword(item.name)}
+                                                        className="text-amber-500 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 text-sm font-medium hover:underline transition-colors flex items-center gap-1"
+                                                        title="비밀번호를 1234로 초기화"
+                                                    >
+                                                        <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>lock_reset</span>
+                                                        초기화
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={() => handleRemove(item.name)}
+                                                    className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 text-sm font-medium hover:underline transition-colors"
+                                                >
+                                                    제거
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))
