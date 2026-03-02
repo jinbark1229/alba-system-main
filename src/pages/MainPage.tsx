@@ -45,22 +45,6 @@ export default function MainPage() {
                         </div>
                     )}
 
-                    {/* Admin: User Management Widget */}
-                    {user.role === "admin" && (
-                        <div className="bg-white dark:bg-[#1e2936] p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-md transition-shadow">
-                            <div className="flex items-center gap-3 mb-4 text-purple-500">
-                                <span className="material-symbols-outlined text-3xl">group</span>
-                                <h3 className="text-lg font-bold text-slate-900 dark:text-white">사용자 관리</h3>
-                            </div>
-                            <p className="text-slate-500 dark:text-slate-400 mb-4 text-sm">
-                                등록된 모든 사용자를 조회하고<br />
-                                계정을 관리합니다.
-                            </p>
-                            <Link to="/admin/users" className="text-purple-500 font-medium hover:underline text-sm inline-flex items-center gap-1">
-                                사용자 보기 <span className="material-symbols-outlined text-lg">arrow_forward</span>
-                            </Link>
-                        </div>
-                    )}
 
                     {/* Boss/Admin: Allowed Names Management Widget */}
                     {(user.role === "boss" || user.role === "admin") && (
