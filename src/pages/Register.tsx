@@ -4,15 +4,13 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function Register() {
-    const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [name, setName] = useState("");
     const [code, setCode] = useState("");
     const [isCodeValid, setIsCodeValid] = useState<boolean | null>(null);
     const [isBossMode, setIsBossMode] = useState(false);
-    const [isEmailVerified, setIsEmailVerified] = useState(false);
     const navigate = useNavigate();
-    const { login, validatePersonalCode, addUser, listUsers, validateRegistrationCode } = useAuth();
+    const { login, validatePersonalCode, addUser, validateRegistrationCode } = useAuth();
 
     // Auto-fill name when code is entered
     useEffect(() => {
@@ -43,14 +41,6 @@ export default function Register() {
         }
     }, [code, validatePersonalCode, validateRegistrationCode]);
 
-    const handleVerifyEmail = () => {
-        if (!email) {
-            alert("이메일을 입력해주세요.");
-            return;
-        }
-        alert(`인증 코드가 ${email}로 전송되었습니다. (모의 과정: 자동 인증됨)`);
-        setIsEmailVerified(true);
-    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -82,27 +72,12 @@ export default function Register() {
             finalName = allowedEntry.name;
         }
 
-        const existingUsers = listUsers();
-
-        // Check for duplicate Name
-        if (existingUsers.some(u => u.name === finalName)) {
-            alert("이미 가입된 이름입니다.");
-            return;
-        }
-
-        // Check for duplicate Email (only if email is provided)
-        if (email && existingUsers.some(u => u.email === email)) {
-            alert("이미 가입된 이메일입니다. 다른 이메일을 사용해주세요.");
-            return;
-        }
-
         // Prepare new user object
         const newUserProfile = {
             name: finalName,
             role: assignedRole,
             storeId: assignedStoreId,
             token: "fake-jwt-token",
-            email: email || undefined,
             password: password
         };
 
@@ -226,41 +201,6 @@ export default function Register() {
                                 className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#1a2632] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
                                 required
                             />
-                        </div>
-                    )}
-
-                    {/* Optional: Email */}
-                    {isCodeValid && (
-                        <div className="flex flex-col gap-2 animate-fadeIn">
-                            <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                                이메일 (선택)
-                            </label>
-                            <div className="flex gap-2">
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => {
-                                        setEmail(e.target.value);
-                                        setIsEmailVerified(false);
-                                    }}
-                                    placeholder="example@email.com"
-                                    className="flex-1 px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#1a2632] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all"
-                                />
-                                {email && !isEmailVerified && (
-                                    <button
-                                        type="button"
-                                        onClick={handleVerifyEmail}
-                                        className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl font-medium text-sm hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors whitespace-nowrap"
-                                    >
-                                        인증
-                                    </button>
-                                )}
-                                {isEmailVerified && (
-                                    <span className="flex items-center text-emerald-500 text-xl px-2">
-                                        <span className="material-symbols-outlined">check_circle</span>
-                                    </span>
-                                )}
-                            </div>
                         </div>
                     )}
 

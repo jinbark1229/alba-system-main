@@ -5,7 +5,6 @@ export interface User {
     name: string;
     role: 'worker' | 'boss' | 'admin';
     token?: string;
-    email?: string;
 }
 
 export interface Log {

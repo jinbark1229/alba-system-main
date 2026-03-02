@@ -7,7 +7,6 @@
 create table if not exists public.users (
   id uuid primary key default gen_random_uuid(),
   name text not null unique,
-  email text unique,
   password text not null,
   role text not null check (role in ('worker', 'manager', 'boss', 'admin')),
   store_id text check (store_id in ('store1', 'store2', 'both')),

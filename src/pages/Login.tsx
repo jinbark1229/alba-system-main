@@ -45,7 +45,7 @@ export default function Login() {
             const { data, error } = await supabase
                 .from('users')
                 .select('*')
-                .or(`name.eq.${identifier},email.eq.${identifier}`)
+                .eq('name', identifier)
                 .single();
 
             if (error || !data) {
@@ -126,7 +126,7 @@ export default function Login() {
                             type="text"
                             value={identifier}
                             onChange={(e) => setIdentifier(e.target.value)}
-                            placeholder="홍길동 또는 email@example.com"
+                            placeholder="홍길동"
                             className="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#1a2632] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all"
                             required
                         />

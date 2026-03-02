@@ -6,7 +6,6 @@ import { supabase, type DbUser, type DbAllowedName } from "../lib/supabase";
 interface User {
     id: string;
     name: string;
-    email?: string;
     password?: string;
     role: "worker" | "manager" | "boss" | "admin";
     storeId?: "store1" | "store2" | "both";
@@ -176,7 +175,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             .from('users')
             .insert({
                 name: newUser.name,
-                email: newUser.email || null,
                 password: newUser.password || '',
                 role: newUser.role,
                 store_id: newUser.storeId || null
