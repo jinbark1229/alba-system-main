@@ -176,6 +176,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             .from('users')
             .insert({
                 name: newUser.name,
+                email: newUser.email || null,
                 password: newUser.password || '',
                 role: newUser.role,
                 store_id: newUser.storeId || null
