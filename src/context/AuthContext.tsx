@@ -143,6 +143,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             return { success: false, message: "새 비밀번호는 4자리 이상이어야 합니다." };
         }
 
+        if (currentPwd === newPwd) {
+            return { success: false, message: "새 비밀번호가 현재 비밀번호와 동일합니다." };
+        }
+
         // Supabase에서 직접 현재 비밀번호 확인 (항상 최신 데이터)
         const { data: dbUser, error: fetchError } = await supabase
             .from('users')
