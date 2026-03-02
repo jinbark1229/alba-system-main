@@ -22,7 +22,6 @@ const navItems: NavItem[] = [
 const adminItems: NavItem[] = [
     { path: "/admin/export", icon: "download", label: "데이터 내보내기", roles: ["boss", "admin"] },
     { path: "/admin/allowed-names", icon: "person_add", label: "허용 이름 관리", roles: ["boss", "admin"] },
-    { path: "/admin/users", icon: "group", label: "사용자 관리", roles: ["admin"] },
 ];
 
 export default function Sidebar() {
@@ -185,7 +184,6 @@ export function MobileNav() {
         { path: "/", icon: "home", label: "홈" },
         { path: "/schedule", icon: "calendar_month", label: "일정", roles: ["admin"] },
         { path: "/notices", icon: "campaign", label: "공지", roles: ["admin"] },
-        { path: "/admin/users", icon: "group", label: "사용자", roles: ["admin"] },
         { path: "/admin/allowed-names", icon: "person_add", label: "허용관리", roles: ["admin"] },
     ].filter(canAccess) : isBossOrAdmin ? [
         // Boss main items

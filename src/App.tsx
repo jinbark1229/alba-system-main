@@ -7,7 +7,6 @@ import SalaryPage from "./pages/SalaryPage.tsx";
 import SchedulePage from "./pages/SchedulePage.tsx";
 import NoticePage from "./pages/NoticePage.tsx";
 import AdminExportPage from "./pages/AdminExportPage.tsx";
-import AdminUserManagement from "./pages/AdminUserManagement.tsx";
 import AllowedNamesManagement from "./pages/AllowedNamesManagement.tsx";
 import SettingsPage from "./pages/SettingsPage.tsx";
 import Login from "./pages/Login.tsx";
@@ -76,14 +75,6 @@ export default function App() {
             element={
               <ProtectedRoute role={['boss', 'admin']}>
                 <AdminExportPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/users"
-            element={
-              <ProtectedRoute role="admin">
-                <AdminUserManagement />
               </ProtectedRoute>
             }
           />
