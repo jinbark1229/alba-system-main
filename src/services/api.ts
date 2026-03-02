@@ -315,16 +315,36 @@ export const exportLogsZip = async (startDate: string, endDate: string): Promise
 
     if (error) throw error;
 
-    // Create CSV content
-    let csvContent = "날짜,이름,시작시간,종료시간,휴게시간(분)\n";
-    (data || []).forEach((log: DbWorkLog) => {
-        csvContent += `${log.date},${log.user_name},${log.start_time},${log.end_time},${log.break_duration}\n`;
+    const logs: DbWorkLog[] = data || [];
+
+    if (logs.length === 0) {
+        // Return a simple CSV with just the header when there's no data
+        const csv = "\uFEFF날짜,이름,시작시간,종료시간,휴게시간(분)\n";
+        return new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    }
+
+    // Group logs by worker name
+    const byWorker: Record<string, DbWorkLog[]> = {};
+    logs.forEach(log => {
+        if (!byWorker[log.user_name]) byWorker[log.user_name] = [];
+        byWorker[log.user_name].push(log);
     });
 
-    // Create blob
-    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
-    return blob;
+    // Build a ZIP with one CSV per worker
+    const JSZip = (await import('jszip')).default;
+    const zip = new JSZip();
+
+    Object.entries(byWorker).forEach(([name, workerLogs]) => {
+        let csv = "\uFEFF날짜,이름,시작시간,종료시간,휴게시간(분)\n";
+        workerLogs.forEach(log => {
+            csv += `${log.date},${log.user_name},${log.start_time},${log.end_time},${log.break_duration}\n`;
+        });
+        zip.file(`${name}.csv`, csv);
+    });
+
+    return zip.generateAsync({ type: 'blob' });
 };
+
 
 // ============ Image Upload ============
 export const uploadImage = async (file: File): Promise<string> => {
