@@ -89,22 +89,11 @@ export interface Schedule {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const getSchedules = async (_userName: string): Promise<Schedule[]> => {
-    const { data, error } = await supabase
-        .from('schedules')
-        .select('*')
-        .order('date', { ascending: true });
-
-    if (error) throw error;
-
-    return (data || []).map((s: DbSchedule) => ({
-        id: s.id,
-        name: s.name,
-        date: s.date,
-        start: s.start_time,
-        end: s.end_time,
-        storeId: s.store_id
-    }));
+    const dataString = localStorage.getItem('alba_schedules') || '[]';
+    const data = JSON.parse(dataString) as Schedule[];
+    return data.sort((a, b) => a.date.localeCompare(b.date));
 };
+
 
 export const uploadSchedules = async (file: File, storeId: string): Promise<void> => {
     return new Promise((resolve, reject) => {
