@@ -1,5 +1,5 @@
 // src/services/api.ts
-import { supabase, type DbWorkLog, type DbSchedule } from "../lib/supabase";
+import { supabase, type DbWorkLog, type DbSchedule, type DbNotice } from "../lib/supabase";
 
 // ============ Work Logs ============
 export interface WorkLog {
@@ -89,11 +89,22 @@ export interface Schedule {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const getSchedules = async (_userName: string): Promise<Schedule[]> => {
-    const dataString = localStorage.getItem('alba_schedules') || '[]';
-    const data = JSON.parse(dataString) as Schedule[];
-    return data.sort((a, b) => a.date.localeCompare(b.date));
-};
+    const { data, error } = await supabase
+        .from('schedules')
+        .select('*')
+        .order('date', { ascending: true });
 
+    if (error) throw error;
+
+    return (data || []).map((s: DbSchedule) => ({
+        id: s.id,
+        name: s.name,
+        date: s.date,
+        start: s.start_time,
+        end: s.end_time,
+        storeId: s.store_id
+    }));
+};
 
 export const uploadSchedules = async (file: File, storeId: string): Promise<void> => {
     return new Promise((resolve, reject) => {
@@ -205,40 +216,66 @@ export interface Notice {
 }
 
 export const getNotices = async (storeId?: string): Promise<Notice[]> => {
-    const dataString = localStorage.getItem('alba_notices') || '[]';
-    let data: Notice[] = JSON.parse(dataString);
+    let query = supabase
+        .from('notices')
+        .select('*')
+        .order('created_at', { ascending: false });
 
     if (storeId && storeId !== 'both' && storeId !== 'all') {
-        data = data.filter(n => n.storeId === storeId || n.storeId === 'all' || n.storeId === 'both');
+        query = query.or(`store_id.eq.${storeId},store_id.eq.all`);
     }
 
-    // Sort by createdAt descending
-    return data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    const { data, error } = await query;
+    if (error) throw error;
+
+    return (data || []).map((n: DbNotice) => ({
+        id: n.id,
+        title: n.title,
+        content: n.content,
+        author: n.author,
+        storeId: n.store_id,
+        priority: n.priority,
+        imageUrls: n.image_urls || [],
+        createdAt: n.created_at
+    }));
 };
 
 export const createNotice = async (notice: Omit<Notice, 'id' | 'createdAt'>): Promise<Notice> => {
-    const dataString = localStorage.getItem('alba_notices') || '[]';
-    const data: Notice[] = JSON.parse(dataString);
+    const storeId = notice.storeId === 'both' ? 'all' : (notice.storeId || 'all');
+    const { data, error } = await supabase
+        .from('notices')
+        .insert({
+            title: notice.title,
+            content: notice.content,
+            author: notice.author,
+            store_id: storeId,
+            priority: notice.priority,
+            image_urls: notice.imageUrls || []
+        })
+        .select()
+        .single();
 
-    const newNotice: Notice = {
-        ...notice,
-        storeId: notice.storeId === 'both' ? 'all' : (notice.storeId || 'all'),
-        id: Math.random().toString(36).substr(2, 9),
-        createdAt: new Date().toISOString()
+    if (error) throw error;
+
+    return {
+        id: data.id,
+        title: data.title,
+        content: data.content,
+        author: data.author,
+        storeId: data.store_id,
+        priority: data.priority,
+        imageUrls: data.image_urls || [],
+        createdAt: data.created_at
     };
-
-    data.push(newNotice);
-    localStorage.setItem('alba_notices', JSON.stringify(data));
-
-    return newNotice;
 };
 
 export const deleteNotice = async (noticeId: string) => {
-    const dataString = localStorage.getItem('alba_notices') || '[]';
-    const data: Notice[] = JSON.parse(dataString);
+    const { error } = await supabase
+        .from('notices')
+        .delete()
+        .eq('id', noticeId);
 
-    const filtered = data.filter(n => n.id !== noticeId);
-    localStorage.setItem('alba_notices', JSON.stringify(filtered));
+    if (error) throw error;
 };
 
 // ============ Schedule Comments (using notices for now) ============
@@ -291,14 +328,21 @@ export const exportLogsZip = async (startDate: string, endDate: string): Promise
 
 // ============ Image Upload ============
 export const uploadImage = async (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            resolve(reader.result as string);
-        };
-        reader.onerror = () => reject("이미지 변환 중 오류가 발생했습니다.");
-        reader.readAsDataURL(file);
-    });
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+    const filePath = `notices/${fileName}`;
+
+    const { error } = await supabase.storage
+        .from('images')
+        .upload(filePath, file);
+
+    if (error) throw error;
+
+    const { data } = supabase.storage
+        .from('images')
+        .getPublicUrl(filePath);
+
+    return data.publicUrl;
 };
 
 export const uploadImages = async (files: File[]): Promise<string[]> => {
