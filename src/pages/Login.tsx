@@ -120,7 +120,7 @@ export default function Login() {
                 <form onSubmit={handleSubmit} className="flex flex-col gap-6">
                     <div className="flex flex-col gap-2">
                         <label className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                            이름 (또는 이메일)
+                            이름
                         </label>
                         <input
                             type="text"
