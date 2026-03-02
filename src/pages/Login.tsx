@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { supabase } from "../lib/supabase";
 
 const DEMO_ACCOUNTS = [
     { name: "admin", password: "admin", role: "admin", storeId: "both", label: "관리자 (Admin)" },
@@ -14,53 +15,72 @@ const DEMO_ACCOUNTS = [
 export default function Login() {
     const [identifier, setIdentifier] = useState("");
     const [password, setPassword] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
-    const { login, listUsers, isNameAllowed } = useAuth();
+    const { login, isNameAllowed } = useAuth();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsSubmitting(true);
 
-        // 1) 데모 계정 먼저 확인 (Supabase 불필요, 항상 로그인 가능)
-        const demoMatch = DEMO_ACCOUNTS.find(
-            a => a.name === identifier && a.password === password
-        );
-        if (demoMatch) {
-            login({
-                id: `demo-${demoMatch.name}`,
-                name: demoMatch.name,
-                password: demoMatch.password,
-                role: demoMatch.role as "worker" | "boss" | "admin",
-                storeId: demoMatch.storeId as "store1" | "store2" | "both",
-                token: `token-demo-${demoMatch.name}`
-            });
-            navigate("/");
-            return;
-        }
+        try {
+            // 1) 데모 계정 먼저 확인 (Supabase 불필요, 항상 로그인 가능)
+            const demoMatch = DEMO_ACCOUNTS.find(
+                a => a.name === identifier && a.password === password
+            );
+            if (demoMatch) {
+                login({
+                    id: `demo-${demoMatch.name}`,
+                    name: demoMatch.name,
+                    password: demoMatch.password,
+                    role: demoMatch.role as "worker" | "boss" | "admin",
+                    storeId: demoMatch.storeId as "store1" | "store2" | "both",
+                    token: `token-demo-${demoMatch.name}`
+                });
+                navigate("/");
+                return;
+            }
 
-        // 2) 일반 사용자 (DB에서 조회)
-        const existingUsers = listUsers();
-        const foundUser = existingUsers.find((u) =>
-            u.email === identifier || u.name === identifier
-        );
+            // 2) 일반 사용자 — Supabase에서 직접 조회 (항상 최신 데이터)
+            const { data, error } = await supabase
+                .from('users')
+                .select('*')
+                .or(`name.eq.${identifier},email.eq.${identifier}`)
+                .single();
 
-        if (foundUser) {
-            const isBossOrAdmin = foundUser.role === "boss" || foundUser.role === "admin";
-            if (!isBossOrAdmin && !isNameAllowed(foundUser.name)) {
+            if (error || !data) {
+                alert("사용자를 찾을 수 없습니다.");
+                return;
+            }
+
+            // 삭제 또는 허용 이름에 없으면 차단
+            const isBossOrAdmin = data.role === "boss" || data.role === "admin";
+            if (!isBossOrAdmin && !isNameAllowed(data.name)) {
                 alert("더 이상 로그인 권한이 없습니다.\n사장님에게 문의하세요.");
                 return;
             }
 
-            if (foundUser.password && foundUser.password !== password) {
+            // 비밀번호 검증
+            if (data.password && data.password !== password) {
                 alert("비밀번호가 일치하지 않습니다.");
                 return;
             }
 
-            login(foundUser);
+            login({
+                id: data.id,
+                name: data.name,
+                password: data.password,
+                role: data.role,
+                storeId: data.store_id || undefined,
+                token: `token-${data.id}`
+            });
             navigate("/");
-        } else {
-            alert("사용자를 찾을 수 없습니다.");
+
+        } finally {
+            setIsSubmitting(false);
         }
     };
+
 
     return (
         <div className="min-h-screen bg-background-light dark:bg-background-dark flex items-center justify-center p-4">
@@ -120,9 +140,10 @@ export default function Login() {
 
                     <button
                         type="submit"
-                        className="w-full bg-primary hover:bg-blue-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30 transform hover:-translate-y-0.5 transition-all text-lg"
+                        disabled={isSubmitting}
+                        className="w-full bg-primary hover:bg-blue-600 disabled:bg-slate-400 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-xl hover:shadow-blue-500/30 transform hover:-translate-y-0.5 transition-all text-lg"
                     >
-                        로그인
+                        {isSubmitting ? "확인 중..." : "로그인"}
                     </button>
                 </form>
 
