@@ -17,7 +17,7 @@ export default function Login() {
     const [password, setPassword] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
-    const { login, isNameAllowed } = useAuth();
+    const { login } = useAuth();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -53,12 +53,20 @@ export default function Login() {
                 return;
             }
 
-            // 삭제 또는 허용 이름에 없으면 차단
+            // 삭제 또는 허용 이름에 없으면 차단 (Supabase에서 직접 확인 — 항상 최신)
             const isBossOrAdmin = data.role === "boss" || data.role === "admin";
-            if (!isBossOrAdmin && !isNameAllowed(data.name)) {
-                alert("더 이상 로그인 권한이 없습니다.\n사장님에게 문의하세요.");
-                return;
+            if (!isBossOrAdmin) {
+                const { data: allowed } = await supabase
+                    .from('allowed_names')
+                    .select('name')
+                    .eq('name', data.name)
+                    .single();
+                if (!allowed) {
+                    alert("더 이상 로그인 권한이 없습니다.\n사장님에게 문의하세요.");
+                    return;
+                }
             }
+
 
             // 비밀번호 검증
             if (data.password && data.password !== password) {

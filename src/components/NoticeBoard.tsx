@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { getNotices, createNotice, deleteNotice, uploadImages, type Notice } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import { supabase } from "../lib/supabase";
 
 const MAX_IMAGES = 6;
 
@@ -33,6 +34,16 @@ export default function NoticeBoard() {
 
     useEffect(() => {
         fetchNotices();
+
+        // Realtime: 공지 추가/삭제 시 자동 갱신
+        const channel = supabase
+            .channel('notices-realtime')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'notices' }, () => {
+                fetchNotices();
+            })
+            .subscribe();
+
+        return () => { supabase.removeChannel(channel); };
     }, [fetchNotices]);
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {

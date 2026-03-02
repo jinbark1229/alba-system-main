@@ -2,6 +2,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { getSchedules, type Schedule } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import { supabase } from "../lib/supabase";
 
 export default function ScheduleTableView() {
     const { user } = useAuth();
@@ -25,6 +26,16 @@ export default function ScheduleTableView() {
             }
         };
         fetchSchedules();
+
+        // Realtime: 스케줄 변경 시 자동 갱신
+        const channel = supabase
+            .channel('schedules-realtime-table')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, () => {
+                fetchSchedules();
+            })
+            .subscribe();
+
+        return () => { supabase.removeChannel(channel); };
     }, [user]);
 
     // Get week dates
