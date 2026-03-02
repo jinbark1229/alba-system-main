@@ -5,12 +5,21 @@ import { useAuth, type AllowedName } from "../context/AuthContext";
 import { MainLayout } from "../components/layout";
 
 export default function AllowedNamesManagement() {
-    const { user, addAllowedName, removeAllowedName, getAllowedNames, listUsers, regenerateCode } = useAuth();
+    const { user, addAllowedName, removeAllowedName, getAllowedNames, listUsers, regenerateCode, isLoading } = useAuth();
     const navigate = useNavigate();
 
     const [newName, setNewName] = useState("");
     const [newRole, setNewRole] = useState<"worker" | "manager" | "boss">("worker");
     const [newStoreId, setNewStoreId] = useState<"store1" | "store2" | "both">("store1");
+
+    // Wait for auth context to finish loading before checking role
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <span className="material-symbols-outlined animate-spin text-primary" style={{ fontSize: '40px' }}>progress_activity</span>
+            </div>
+        );
+    }
 
     // Guard: boss or admin can access
     if (!user || (user.role !== "boss" && user.role !== "admin")) {

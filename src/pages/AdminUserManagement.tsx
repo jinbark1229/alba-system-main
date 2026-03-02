@@ -5,13 +5,21 @@ import { useAuth } from "../context/AuthContext";
 import { MainLayout } from "../components/layout";
 
 export default function AdminUserManagement() {
-    const { user, addUser, removeUser, listUsers } = useAuth();
+    const { user, addUser, removeUser, listUsers, isLoading } = useAuth();
     const navigate = useNavigate();
 
     const [newName, setNewName] = useState("");
     const [newEmail, setNewEmail] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [newRole, setNewRole] = useState<"worker" | "boss" | "admin">("worker");
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <span className="material-symbols-outlined animate-spin text-primary" style={{ fontSize: '40px' }}>progress_activity</span>
+            </div>
+        );
+    }
 
     if (!user || user.role !== "admin") {
         return (
@@ -179,10 +187,10 @@ export default function AdminUserManagement() {
                                                 </td>
                                                 <td className="py-4 px-4 whitespace-nowrap">
                                                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${u.role === "admin"
-                                                            ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400"
-                                                            : u.role === "boss"
-                                                                ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
-                                                                : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-400"
+                                                        ? "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400"
+                                                        : u.role === "boss"
+                                                            ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
+                                                            : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-400"
                                                         }`}>
                                                         {u.role === "admin" ? "관리자" : u.role === "boss" ? "사장님" : "알바생"}
                                                     </span>
