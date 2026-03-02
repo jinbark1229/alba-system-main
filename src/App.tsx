@@ -50,7 +50,7 @@ export default function App() {
           <Route
             path="/schedule"
             element={
-              <ProtectedRoute role={['worker', 'boss']}>
+              <ProtectedRoute role={['worker', 'boss', 'admin']}>
                 <SchedulePage />
               </ProtectedRoute>
             }
@@ -58,7 +58,7 @@ export default function App() {
           <Route
             path="/notices"
             element={
-              <ProtectedRoute role={['worker', 'boss']}>
+              <ProtectedRoute role={['worker', 'boss', 'admin']}>
                 <NoticePage />
               </ProtectedRoute>
             }

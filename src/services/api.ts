@@ -1,5 +1,5 @@
 // src/services/api.ts
-import { supabase, type DbWorkLog, type DbSchedule, type DbNotice } from "../lib/supabase";
+import { supabase, type DbWorkLog, type DbSchedule } from "../lib/supabase";
 
 // ============ Work Logs ============
 export interface WorkLog {
@@ -216,66 +216,40 @@ export interface Notice {
 }
 
 export const getNotices = async (storeId?: string): Promise<Notice[]> => {
-    let query = supabase
-        .from('notices')
-        .select('*')
-        .order('created_at', { ascending: false });
+    const dataString = localStorage.getItem('alba_notices') || '[]';
+    let data: Notice[] = JSON.parse(dataString);
 
-    if (storeId) {
-        query = query.or(`store_id.eq.${storeId},store_id.eq.all`);
+    if (storeId && storeId !== 'both' && storeId !== 'all') {
+        data = data.filter(n => n.storeId === storeId || n.storeId === 'all' || n.storeId === 'both');
     }
 
-    const { data, error } = await query;
-
-    if (error) throw error;
-
-    return (data || []).map((n: DbNotice) => ({
-        id: n.id,
-        title: n.title,
-        content: n.content,
-        author: n.author,
-        storeId: n.store_id,
-        priority: n.priority,
-        imageUrls: n.image_urls || [],
-        createdAt: n.created_at
-    }));
+    // Sort by createdAt descending
+    return data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 };
 
 export const createNotice = async (notice: Omit<Notice, 'id' | 'createdAt'>): Promise<Notice> => {
-    const { data, error } = await supabase
-        .from('notices')
-        .insert({
-            title: notice.title,
-            content: notice.content,
-            author: notice.author,
-            store_id: notice.storeId,
-            priority: notice.priority,
-            image_urls: notice.imageUrls || []
-        })
-        .select()
-        .single();
+    const dataString = localStorage.getItem('alba_notices') || '[]';
+    const data: Notice[] = JSON.parse(dataString);
 
-    if (error) throw error;
-
-    return {
-        id: data.id,
-        title: data.title,
-        content: data.content,
-        author: data.author,
-        storeId: data.store_id,
-        priority: data.priority,
-        imageUrls: data.image_urls || [],
-        createdAt: data.created_at
+    const newNotice: Notice = {
+        ...notice,
+        storeId: notice.storeId === 'both' ? 'all' : (notice.storeId || 'all'),
+        id: Math.random().toString(36).substr(2, 9),
+        createdAt: new Date().toISOString()
     };
+
+    data.push(newNotice);
+    localStorage.setItem('alba_notices', JSON.stringify(data));
+
+    return newNotice;
 };
 
 export const deleteNotice = async (noticeId: string) => {
-    const { error } = await supabase
-        .from('notices')
-        .delete()
-        .eq('id', noticeId);
+    const dataString = localStorage.getItem('alba_notices') || '[]';
+    const data: Notice[] = JSON.parse(dataString);
 
-    if (error) throw error;
+    const filtered = data.filter(n => n.id !== noticeId);
+    localStorage.setItem('alba_notices', JSON.stringify(filtered));
 };
 
 // ============ Schedule Comments (using notices for now) ============
@@ -328,21 +302,14 @@ export const exportLogsZip = async (startDate: string, endDate: string): Promise
 
 // ============ Image Upload ============
 export const uploadImage = async (file: File): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-    const filePath = `notices/${fileName}`;
-
-    const { error } = await supabase.storage
-        .from('images')
-        .upload(filePath, file);
-
-    if (error) throw error;
-
-    const { data } = supabase.storage
-        .from('images')
-        .getPublicUrl(filePath);
-
-    return data.publicUrl;
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            resolve(reader.result as string);
+        };
+        reader.onerror = () => reject("이미지 변환 중 오류가 발생했습니다.");
+        reader.readAsDataURL(file);
+    });
 };
 
 export const uploadImages = async (files: File[]): Promise<string[]> => {

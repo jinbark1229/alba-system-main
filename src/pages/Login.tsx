@@ -3,6 +3,14 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+const DEMO_ACCOUNTS = [
+    { name: "admin", password: "admin", role: "admin", storeId: "both", label: "관리자 (Admin)" },
+    { name: "boss", password: "boss", role: "boss", storeId: "both", label: "사장님 (Boss)" },
+    { name: "yeonsan", password: "yeonsan", role: "worker", storeId: "store1", label: "연산점 알바생" },
+    { name: "bujeon", password: "bujeon", role: "worker", storeId: "store2", label: "부전점 알바생" },
+    { name: "dual", password: "dual", role: "worker", storeId: "both", label: "양쪽 지점 알바생" }
+] as const;
+
 export default function Login() {
     const [identifier, setIdentifier] = useState("");
     const [password, setPassword] = useState("");
@@ -12,14 +20,30 @@ export default function Login() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Get users from context (loaded from Supabase)
+        // 1) 데모 계정 먼저 확인 (Supabase 불필요, 항상 로그인 가능)
+        const demoMatch = DEMO_ACCOUNTS.find(
+            a => a.name === identifier && a.password === password
+        );
+        if (demoMatch) {
+            login({
+                id: `demo-${demoMatch.name}`,
+                name: demoMatch.name,
+                password: demoMatch.password,
+                role: demoMatch.role as "worker" | "boss" | "admin",
+                storeId: demoMatch.storeId as "store1" | "store2" | "both",
+                token: `token-demo-${demoMatch.name}`
+            });
+            navigate("/");
+            return;
+        }
+
+        // 2) 일반 사용자 (DB에서 조회)
         const existingUsers = listUsers();
         const foundUser = existingUsers.find((u) =>
             u.email === identifier || u.name === identifier
         );
 
         if (foundUser) {
-            // Boss and admin can always log in
             const isBossOrAdmin = foundUser.role === "boss" || foundUser.role === "admin";
             if (!isBossOrAdmin && !isNameAllowed(foundUser.name)) {
                 alert("더 이상 로그인 권한이 없습니다.\n사장님에게 문의하세요.");
@@ -116,6 +140,34 @@ export default function Login() {
                     >
                         회원가입
                     </Link>
+                </div>
+
+                {/* 포트폴리오 안내 칸 */}
+                <div className="mt-8 p-5 bg-slate-50 dark:bg-[#1a2632] rounded-xl border border-slate-200 dark:border-slate-700">
+                    <div className="flex items-center gap-2 mb-4">
+                        <span className="material-symbols-outlined text-primary text-xl">info</span>
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                            포트폴리오 평가용 테스트 계정
+                        </h3>
+                    </div>
+                    <div className="grid grid-cols-1 gap-3">
+                        {DEMO_ACCOUNTS.map((account) => (
+                            <div key={account.name}
+                                className="flex justify-between items-center p-3 bg-white dark:bg-[#1e2936] rounded-lg border border-slate-100 dark:border-slate-800 shadow-sm cursor-pointer hover:border-primary/50 transition-colors"
+                                onClick={() => { setIdentifier(account.name); setPassword(account.password); }}
+                            >
+                                <div>
+                                    <div className="text-xs font-bold text-primary mb-1">{account.label}</div>
+                                    <div className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                                        아이디: {account.name} <span className="mx-1 text-slate-300">|</span> 비밀번호: {account.password}
+                                    </div>
+                                </div>
+                                <button className="text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-md hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                                    선택
+                                </button>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>

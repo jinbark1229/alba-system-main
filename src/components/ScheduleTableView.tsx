@@ -6,10 +6,13 @@ import { useAuth } from "../context/AuthContext";
 export default function ScheduleTableView() {
     const { user } = useAuth();
     const [schedules, setSchedules] = useState<Schedule[]>([]);
-    const [currentStore, setCurrentStore] = useState<'store1' | 'store2'>('store1');
+    const [currentStore, setCurrentStore] = useState<'store1' | 'store2'>(
+        user?.storeId === 'store2' ? 'store2' : 'store1'
+    );
     const [weekOffset, setWeekOffset] = useState(0);
 
     const isBossOrAdmin = user?.role === 'boss' || user?.role === 'admin';
+    const canToggleStore = isBossOrAdmin || user?.storeId === 'both';
 
     useEffect(() => {
         const fetchSchedules = async () => {
@@ -82,28 +85,30 @@ export default function ScheduleTableView() {
     return (
         <div className="flex flex-col gap-4">
             {/* Store Toggle */}
-            <div className="flex justify-center">
-                <div className="bg-white dark:bg-[#1e2936] p-1 rounded-xl inline-flex shadow-sm border border-slate-200 dark:border-slate-700">
-                    <button
-                        onClick={() => setCurrentStore('store1')}
-                        className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${currentStore === 'store1'
-                            ? "bg-primary text-white shadow-sm"
-                            : "text-slate-500 dark:text-slate-400 hover:text-primary"
-                            }`}
-                    >
-                        연산점
-                    </button>
-                    <button
-                        onClick={() => setCurrentStore('store2')}
-                        className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${currentStore === 'store2'
-                            ? "bg-primary text-white shadow-sm"
-                            : "text-slate-500 dark:text-slate-400 hover:text-primary"
-                            }`}
-                    >
-                        부전점
-                    </button>
+            {canToggleStore && (
+                <div className="flex justify-center">
+                    <div className="bg-white dark:bg-[#1e2936] p-1 rounded-xl inline-flex shadow-sm border border-slate-200 dark:border-slate-700">
+                        <button
+                            onClick={() => setCurrentStore('store1')}
+                            className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${currentStore === 'store1'
+                                ? "bg-primary text-white shadow-sm"
+                                : "text-slate-500 dark:text-slate-400 hover:text-primary"
+                                }`}
+                        >
+                            연산점
+                        </button>
+                        <button
+                            onClick={() => setCurrentStore('store2')}
+                            className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${currentStore === 'store2'
+                                ? "bg-primary text-white shadow-sm"
+                                : "text-slate-500 dark:text-slate-400 hover:text-primary"
+                                }`}
+                        >
+                            부전점
+                        </button>
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Week Navigation */}
             <div className="flex items-center justify-between">

@@ -45,35 +45,73 @@ export default function MainPage() {
                         </div>
                     )}
 
-                    {/* Schedule Widget */}
-                    <div className="bg-white dark:bg-[#1e2936] p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-md transition-shadow">
-                        <div className="flex items-center gap-3 mb-4 text-primary">
-                            <span className="material-symbols-outlined text-3xl">calendar_month</span>
-                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">근무 일정</h3>
+                    {/* Admin: User Management Widget */}
+                    {user.role === "admin" && (
+                        <div className="bg-white dark:bg-[#1e2936] p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-md transition-shadow">
+                            <div className="flex items-center gap-3 mb-4 text-purple-500">
+                                <span className="material-symbols-outlined text-3xl">group</span>
+                                <h3 className="text-lg font-bold text-slate-900 dark:text-white">사용자 관리</h3>
+                            </div>
+                            <p className="text-slate-500 dark:text-slate-400 mb-4 text-sm">
+                                등록된 모든 사용자를 조회하고<br />
+                                계정을 관리합니다.
+                            </p>
+                            <Link to="/admin/users" className="text-purple-500 font-medium hover:underline text-sm inline-flex items-center gap-1">
+                                사용자 보기 <span className="material-symbols-outlined text-lg">arrow_forward</span>
+                            </Link>
                         </div>
-                        <p className="text-slate-500 dark:text-slate-400 mb-4 text-sm">
-                            이번 달 근무 스케줄을 확인하고<br />
-                            대타를 요청할 수 있습니다.
-                        </p>
-                        <Link to="/schedule" className="text-primary font-medium hover:underline text-sm inline-flex items-center gap-1">
-                            일정 보기 <span className="material-symbols-outlined text-lg">arrow_forward</span>
-                        </Link>
-                    </div>
+                    )}
 
-                    {/* Notice Widget */}
-                    <div className="bg-white dark:bg-[#1e2936] p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-md transition-shadow">
-                        <div className="flex items-center gap-3 mb-4 text-amber-500">
-                            <span className="material-symbols-outlined text-3xl">campaign</span>
-                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">공지사항</h3>
+                    {/* Boss/Admin: Allowed Names Management Widget */}
+                    {(user.role === "boss" || user.role === "admin") && (
+                        <div className="bg-white dark:bg-[#1e2936] p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-md transition-shadow">
+                            <div className="flex items-center gap-3 mb-4 text-teal-500">
+                                <span className="material-symbols-outlined text-3xl">person_add</span>
+                                <h3 className="text-lg font-bold text-slate-900 dark:text-white">허용 이름 관리</h3>
+                            </div>
+                            <p className="text-slate-500 dark:text-slate-400 mb-4 text-sm">
+                                로그인 허용 알바생 이름을<br />
+                                추가하거나 삭제합니다.
+                            </p>
+                            <Link to="/admin/allowed-names" className="text-teal-500 font-medium hover:underline text-sm inline-flex items-center gap-1">
+                                이름 관리 <span className="material-symbols-outlined text-lg">arrow_forward</span>
+                            </Link>
                         </div>
-                        <p className="text-slate-500 dark:text-slate-400 mb-4 text-sm">
-                            매장 전달사항과 주요 공지를<br />
-                            확인할 수 있습니다.
-                        </p>
-                        <Link to="/notices" className="text-amber-500 font-medium hover:underline text-sm inline-flex items-center gap-1">
-                            공지 확인 <span className="material-symbols-outlined text-lg">arrow_forward</span>
-                        </Link>
-                    </div>
+                    )}
+
+                    {/* Schedule Widget — for worker, boss, admin */}
+                    {(user.role === "worker" || user.role === "boss" || user.role === "admin") && (
+                        <div className="bg-white dark:bg-[#1e2936] p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-md transition-shadow">
+                            <div className="flex items-center gap-3 mb-4 text-primary">
+                                <span className="material-symbols-outlined text-3xl">calendar_month</span>
+                                <h3 className="text-lg font-bold text-slate-900 dark:text-white">근무 일정</h3>
+                            </div>
+                            <p className="text-slate-500 dark:text-slate-400 mb-4 text-sm">
+                                이번 달 근무 스케줄을 확인하고<br />
+                                대타를 요청할 수 있습니다.
+                            </p>
+                            <Link to="/schedule" className="text-primary font-medium hover:underline text-sm inline-flex items-center gap-1">
+                                일정 보기 <span className="material-symbols-outlined text-lg">arrow_forward</span>
+                            </Link>
+                        </div>
+                    )}
+
+                    {/* Notice Widget — for worker, boss, admin */}
+                    {(user.role === "worker" || user.role === "boss" || user.role === "admin") && (
+                        <div className="bg-white dark:bg-[#1e2936] p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-md transition-shadow">
+                            <div className="flex items-center gap-3 mb-4 text-amber-500">
+                                <span className="material-symbols-outlined text-3xl">campaign</span>
+                                <h3 className="text-lg font-bold text-slate-900 dark:text-white">공지사항</h3>
+                            </div>
+                            <p className="text-slate-500 dark:text-slate-400 mb-4 text-sm">
+                                매장 전달사항과 주요 공지를<br />
+                                확인할 수 있습니다.
+                            </p>
+                            <Link to="/notices" className="text-amber-500 font-medium hover:underline text-sm inline-flex items-center gap-1">
+                                공지 확인 <span className="material-symbols-outlined text-lg">arrow_forward</span>
+                            </Link>
+                        </div>
+                    )}
                 </div>
 
                 {/* Account Actions */}

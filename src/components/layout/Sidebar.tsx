@@ -13,15 +13,15 @@ interface NavItem {
 const navItems: NavItem[] = [
     { path: "/", icon: "home", label: "홈" },
     { path: "/daily-log", icon: "edit_note", label: "근무 일지", roles: ["worker"] },
-    { path: "/schedule", icon: "calendar_month", label: "근무 일정", roles: ["worker", "boss"] },
+    { path: "/schedule", icon: "calendar_month", label: "근무 일정", roles: ["worker", "boss", "admin"] },
     { path: "/salary", icon: "attach_money", label: "급여 계산", roles: ["worker"] },
-    { path: "/notices", icon: "campaign", label: "공지사항", roles: ["worker", "boss"] },
+    { path: "/notices", icon: "campaign", label: "공지사항", roles: ["worker", "boss", "admin"] },
     { path: "/settings", icon: "settings", label: "설정", roles: ["worker", "manager", "boss", "admin"] },
 ];
 
 const adminItems: NavItem[] = [
     { path: "/admin/export", icon: "download", label: "데이터 내보내기", roles: ["boss", "admin"] },
-    { path: "/admin/allowed-names", icon: "person_add", label: "허용 이름 관리", roles: ["boss"] },
+    { path: "/admin/allowed-names", icon: "person_add", label: "허용 이름 관리", roles: ["boss", "admin"] },
     { path: "/admin/users", icon: "group", label: "사용자 관리", roles: ["admin"] },
 ];
 
@@ -175,10 +175,19 @@ export function MobileNav() {
         navigate("/login");
     };
 
-    // Combine nav items for mobile - different order for boss
-    const isBoss = user?.role === 'boss' || user?.role === 'admin';
+    // Combine nav items for mobile - different order for boss/admin
+    const isAdmin = user?.role === 'admin';
+    const isBoss = user?.role === 'boss';
+    const isBossOrAdmin = isBoss || isAdmin;
 
-    const mobileNavItems: NavItem[] = isBoss ? [
+    const mobileNavItems: NavItem[] = isAdmin ? [
+        // Admin: all management features
+        { path: "/", icon: "home", label: "홈" },
+        { path: "/schedule", icon: "calendar_month", label: "일정", roles: ["admin"] },
+        { path: "/notices", icon: "campaign", label: "공지", roles: ["admin"] },
+        { path: "/admin/users", icon: "group", label: "사용자", roles: ["admin"] },
+        { path: "/admin/allowed-names", icon: "person_add", label: "허용관리", roles: ["admin"] },
+    ].filter(canAccess) : isBossOrAdmin ? [
         // Boss main items
         { path: "/", icon: "home", label: "홈" },
         { path: "/schedule", icon: "calendar_month", label: "일정", roles: ["boss"] },

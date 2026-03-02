@@ -6,12 +6,15 @@ import { useAuth } from "../context/AuthContext";
 export default function ScheduleCalendar() {
     const { user } = useAuth();
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [currentStore, setCurrentStore] = useState<'store1' | 'store2'>('store1');
+    const [currentStore, setCurrentStore] = useState<'store1' | 'store2'>(
+        user?.storeId === 'store2' ? 'store2' : 'store1'
+    );
     const [logs, setLogs] = useState<Schedule[]>([]);
 
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
     const isBossOrAdmin = user?.role === 'boss' || user?.role === 'admin';
+    const canToggleStore = isBossOrAdmin || user?.storeId === 'both';
 
     useEffect(() => {
         const fetchSchedules = async () => {
@@ -87,30 +90,32 @@ export default function ScheduleCalendar() {
     return (
         <div className="bg-white dark:bg-[#1e2936] rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
             {/* Store Toggle */}
-            <div className="flex justify-center p-3 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
-                <div className="bg-white dark:bg-[#1e2936] p-1 rounded-xl inline-flex shadow-sm border border-slate-200 dark:border-slate-700">
-                    <button
-                        onClick={() => setCurrentStore('store1')}
-                        className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5 ${currentStore === 'store1'
-                            ? "bg-primary text-white shadow-sm"
-                            : "text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800"
-                            }`}
-                    >
-                        <span className="material-symbols-outlined text-base">storefront</span>
-                        연산점
-                    </button>
-                    <button
-                        onClick={() => setCurrentStore('store2')}
-                        className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5 ${currentStore === 'store2'
-                            ? "bg-primary text-white shadow-sm"
-                            : "text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800"
-                            }`}
-                    >
-                        <span className="material-symbols-outlined text-base">store</span>
-                        부전점
-                    </button>
+            {canToggleStore && (
+                <div className="flex justify-center p-3 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
+                    <div className="bg-white dark:bg-[#1e2936] p-1 rounded-xl inline-flex shadow-sm border border-slate-200 dark:border-slate-700">
+                        <button
+                            onClick={() => setCurrentStore('store1')}
+                            className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5 ${currentStore === 'store1'
+                                ? "bg-primary text-white shadow-sm"
+                                : "text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800"
+                                }`}
+                        >
+                            <span className="material-symbols-outlined text-base">storefront</span>
+                            연산점
+                        </button>
+                        <button
+                            onClick={() => setCurrentStore('store2')}
+                            className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-1.5 ${currentStore === 'store2'
+                                ? "bg-primary text-white shadow-sm"
+                                : "text-slate-500 dark:text-slate-400 hover:text-primary hover:bg-slate-50 dark:hover:bg-slate-800"
+                                }`}
+                        >
+                            <span className="material-symbols-outlined text-base">store</span>
+                            부전점
+                        </button>
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Calendar Header */}
             <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">

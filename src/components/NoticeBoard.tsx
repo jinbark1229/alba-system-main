@@ -13,6 +13,7 @@ export default function NoticeBoard() {
     const [newTitle, setNewTitle] = useState("");
     const [newContent, setNewContent] = useState("");
     const [priority, setPriority] = useState<"normal" | "important" | "urgent">("normal");
+    const [targetStore, setTargetStore] = useState<"store1" | "store2" | "all">("all");
     const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
     const [previews, setPreviews] = useState<string[]>([]);
     const [isUploading, setIsUploading] = useState(false);
@@ -75,13 +76,14 @@ export default function NoticeBoard() {
                 title: newTitle,
                 content: newContent,
                 author: user?.name || "Unknown",
-                storeId: user?.storeId || "all",
-                priority,
+                storeId: targetStore,
+                priority: targetStore === 'all' && priority === 'normal' ? 'important' : priority,
                 imageUrls
             });
             setNewTitle("");
             setNewContent("");
             setPriority("normal");
+            setTargetStore("all");
             setSelectedFiles([]);
             setPreviews([]);
             setIsWriting(false);
@@ -199,20 +201,37 @@ export default function NoticeBoard() {
                         )}
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-4">
+                        {isBoss && (
+                            <select
+                                value={targetStore}
+                                onChange={(e) => {
+                                    const value = e.target.value as "store1" | "store2" | "all";
+                                    setTargetStore(value);
+                                    if (value === "all" && priority === "normal") {
+                                        setPriority("important");
+                                    }
+                                }}
+                                className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#1e2936] text-slate-900 dark:text-white"
+                            >
+                                <option value="all">양쪽 (연산+부전)</option>
+                                <option value="store1">연산점</option>
+                                <option value="store2">부전점</option>
+                            </select>
+                        )}
                         <select
                             value={priority}
                             onChange={(e) => setPriority(e.target.value as "normal" | "important" | "urgent")}
                             className="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#1e2936] text-slate-900 dark:text-white"
                         >
-                            <option value="normal">일반</option>
-                            <option value="important">중요</option>
-                            <option value="urgent">긴급</option>
+                            <option value="normal">일반 공지</option>
+                            <option value="important">중요 공지</option>
+                            <option value="urgent">긴급 공지</option>
                         </select>
                         <div className="flex-1"></div>
                         <button
                             type="button"
-                            onClick={() => { setIsWriting(false); setSelectedFiles([]); setPreviews([]); }}
+                            onClick={() => { setIsWriting(false); setSelectedFiles([]); setPreviews([]); setTargetStore("all"); }}
                             className="px-4 py-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
                         >
                             취소
@@ -245,6 +264,11 @@ export default function NoticeBoard() {
                         >
                             <div className="flex items-center gap-2">
                                 {getPriorityBadge(notice.priority)}
+                                {isBoss && (
+                                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                                        {notice.storeId === 'store1' ? '연산점' : notice.storeId === 'store2' ? '부전점' : '전체'}
+                                    </span>
+                                )}
                                 <h3 className="font-bold text-slate-900 dark:text-white flex-1 truncate">{notice.title}</h3>
                                 {notice.imageUrls && notice.imageUrls.length > 0 && (
                                     <span className="material-symbols-outlined text-slate-400 text-sm">image</span>
@@ -272,6 +296,11 @@ export default function NoticeBoard() {
                             <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
                                     {getPriorityBadge(selectedNotice.priority)}
+                                    {isBoss && (
+                                        <span className="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300 shrink-0">
+                                            {selectedNotice.storeId === 'store1' ? '연산점' : selectedNotice.storeId === 'store2' ? '부전점' : '전체'}
+                                        </span>
+                                    )}
                                     <h3 className="font-bold text-lg text-slate-900 dark:text-white">{selectedNotice.title}</h3>
                                 </div>
                                 <div className="text-xs text-slate-400">
