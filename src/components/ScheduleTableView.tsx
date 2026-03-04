@@ -19,7 +19,7 @@ export default function ScheduleTableView() {
         const fetchSchedules = async () => {
             if (!user) return;
             try {
-                const data = await getSchedules(user.name);
+                const data = await getSchedules();
                 setSchedules(data);
             } catch (error) {
                 console.error("Failed to fetch schedules", error);

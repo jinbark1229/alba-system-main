@@ -49,25 +49,6 @@ export const getLogs = async (userName: string): Promise<WorkLog[]> => {
     }));
 };
 
-export const getAllLogs = async (): Promise<WorkLog[]> => {
-    const { data, error } = await supabase
-        .from('work_logs')
-        .select('*')
-        .order('date', { ascending: false });
-
-    if (error) throw error;
-
-    return (data || []).map((log: DbWorkLog) => ({
-        id: log.id,
-        date: log.date,
-        start: log.start_time,
-        end: log.end_time,
-        break: log.break_duration > 0,
-        userName: log.user_name,
-        breakDuration: log.break_duration
-    }));
-};
-
 export const deleteLog = async (logId: string) => {
     const { error } = await supabase
         .from('work_logs')
@@ -88,7 +69,7 @@ export interface Schedule {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const getSchedules = async (_userName: string): Promise<Schedule[]> => {
+export const getSchedules = async (): Promise<Schedule[]> => {
     const { data, error } = await supabase
         .from('schedules')
         .select('*')
@@ -278,32 +259,6 @@ export const deleteNotice = async (noticeId: string) => {
     if (error) throw error;
 };
 
-// ============ Schedule Comments (using notices for now) ============
-export interface ScheduleComment {
-    id: string;
-    storeId: string;
-    userName: string;
-    content: string;
-    createdAt: string;
-}
-
-// Using a simple local array for comments (can be extended to Supabase table if needed)
-let scheduleComments: ScheduleComment[] = [];
-
-export const getScheduleComments = async (storeId: string): Promise<ScheduleComment[]> => {
-    return scheduleComments.filter(c => c.storeId === storeId);
-};
-
-export const addScheduleComment = async (comment: Omit<ScheduleComment, 'id' | 'createdAt'>): Promise<ScheduleComment> => {
-    const newComment: ScheduleComment = {
-        ...comment,
-        id: Math.random().toString(36).substr(2, 9),
-        createdAt: new Date().toISOString()
-    };
-    scheduleComments = [newComment, ...scheduleComments];
-    return newComment;
-};
-
 // ============ Export Functions ============
 export const exportLogsZip = async (startDate: string, endDate: string): Promise<Blob> => {
     const { data, error } = await supabase
@@ -366,10 +321,5 @@ export const uploadImage = async (file: File): Promise<string> => {
 };
 
 export const uploadImages = async (files: File[]): Promise<string[]> => {
-    const urls: string[] = [];
-    for (const file of files) {
-        const url = await uploadImage(file);
-        urls.push(url);
-    }
-    return urls;
+    return Promise.all(files.map(uploadImage));
 };

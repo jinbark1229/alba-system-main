@@ -21,7 +21,7 @@ export default function ScheduleCalendar() {
         const fetchSchedules = async () => {
             if (!user) return;
             try {
-                const schedules = await getSchedules(user.name);
+                const schedules = await getSchedules();
                 setLogs(schedules);
             } catch (error) {
                 console.error("Failed to fetch schedules", error);
