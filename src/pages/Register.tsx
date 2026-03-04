@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import bcrypt from "bcryptjs";
 
 export default function Register() {
     const [password, setPassword] = useState("");
@@ -72,13 +73,16 @@ export default function Register() {
             finalName = allowedEntry.name;
         }
 
+        // 비밀번호 해싱 (bcrypt)
+        const hashedPassword = await bcrypt.hash(password, 10);
+
         // Prepare new user object
         const newUserProfile = {
             name: finalName,
             role: assignedRole,
             storeId: assignedStoreId,
             token: "fake-jwt-token",
-            password: password
+            password: hashedPassword
         };
 
         const createdUser = await addUser(newUserProfile);

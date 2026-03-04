@@ -2,6 +2,7 @@
 // src/context/AuthContext.tsx
 import { createContext, useState, useEffect, type ReactNode } from "react";
 import { supabase, type DbUser, type DbAllowedName } from "../lib/supabase";
+import bcrypt from "bcryptjs";
 
 interface User {
     id: string;
@@ -158,13 +159,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             return { success: false, message: "사용자를 찾을 수 없습니다." };
         }
 
-        if (dbUser.password !== currentPwd) {
+        // bcrypt 또는 평문 비밀번호 확인
+        const isHashed = dbUser.password?.startsWith('$2');
+        const isCurrentCorrect = isHashed
+            ? await bcrypt.compare(currentPwd, dbUser.password)
+            : dbUser.password === currentPwd;
+
+        if (!isCurrentCorrect) {
             return { success: false, message: "현재 비밀번호가 일치하지 않습니다." };
         }
 
+        // 새 비밀번호를 해싱
+        const hashedNewPwd = await bcrypt.hash(newPwd, 10);
         const { error } = await supabase
             .from('users')
-            .update({ password: newPwd })
+            .update({ password: hashedNewPwd })
             .eq('id', user.id);
 
         if (error) {
@@ -208,12 +217,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const resetPassword = async (userName: string): Promise<boolean> => {
         const defaultPwd = "1234";
+        const hashedDefault = await bcrypt.hash(defaultPwd, 10);
         const { error } = await supabase
             .from('users')
-            .update({ password: defaultPwd })
+            .update({ password: hashedDefault })
             .eq('name', userName);
         if (error) return false;
-        setUsers(users.map(u => u.name === userName ? { ...u, password: defaultPwd } : u));
+        setUsers(users.map(u => u.name === userName ? { ...u, password: hashedDefault } : u));
         return true;
     };
 

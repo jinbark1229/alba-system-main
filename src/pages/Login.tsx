@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
+import bcrypt from "bcryptjs";
 
 const DEMO_ACCOUNTS = [
     { name: "admin", password: "admin", role: "admin", storeId: "both", label: "관리자 (Admin)" },
@@ -68,8 +69,24 @@ export default function Login() {
             }
 
 
-            // 비밀번호 검증
-            if (data.password && data.password !== password) {
+            // 비밀번호 검증 (bcrypt 또는 평문 자동 업그레이드)
+            const isHashed = data.password?.startsWith('$2');
+            let passwordMatch = false;
+
+            if (isHashed) {
+                // bcrypt 해싱된 비밀번호 비교
+                passwordMatch = await bcrypt.compare(password, data.password);
+            } else {
+                // 평문 비밀번호 비교 (렌시 데이터 자동 업그레이드)
+                passwordMatch = data.password === password;
+                if (passwordMatch) {
+                    // bcrypt로 자동 업그레이드
+                    const hashed = await bcrypt.hash(password, 10);
+                    await supabase.from('users').update({ password: hashed }).eq('id', data.id);
+                }
+            }
+
+            if (!passwordMatch) {
                 alert("비밀번호가 일치하지 않습니다.");
                 return;
             }
