@@ -2,28 +2,22 @@
 import { useState, useEffect, useMemo } from "react";
 import { getLogs, type WorkLog } from "../services/api";
 import { useAuth } from "../context/AuthContext";
-import { calculateDuration, formatCurrency } from "../utils/timeUtils";
+import { calculateDuration, calculateNightHours, formatCurrency } from "../utils/timeUtils";
+
+// Helper to group by week (ISO week)
+const getWeekKey = (dateStr: string) => {
+    const d = new Date(dateStr);
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+    const week1 = new Date(d.getFullYear(), 0, 4);
+    return `${d.getFullYear()}-W${Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7) + 1}`;
+};
 
 export default function SalaryCalculator() {
     const { user } = useAuth();
     const [hourlyWage, setHourlyWage] = useState(9860);
     const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
     const [logs, setLogs] = useState<WorkLog[]>([]);
-
-    const totalHours = useMemo(() => {
-        let hours = 0;
-        logs.forEach(log => {
-            const duration = calculateDuration(
-                log.start,
-                log.end,
-                log.break ? (log.breakDuration || 60) : 0
-            );
-            hours += duration;
-        });
-        return hours;
-    }, [logs]);
-
-    const totalSalary = useMemo(() => Math.floor(totalHours * hourlyWage), [totalHours, hourlyWage]);
 
     useEffect(() => {
         const fetchLogs = async () => {
@@ -41,11 +35,63 @@ export default function SalaryCalculator() {
         fetchLogs();
     }, [selectedMonth, user]);
 
+    // Calculations
+    const salaryData = useMemo(() => {
+        let baseHours = 0;
+        let nightHours = 0;
+        const weeklyHours: Record<string, number> = {};
+
+        logs.forEach(log => {
+            const duration = calculateDuration(
+                log.start,
+                log.end,
+                log.break ? (log.breakDuration || 60) : 0
+            );
+            
+            // Calculate night hours (22:00 ~ 06:00)
+            const nHours = calculateNightHours(log.start, log.end);
+            
+            baseHours += duration;
+            nightHours += nHours;
+
+            const weekKey = getWeekKey(log.date);
+            if (!weeklyHours[weekKey]) weeklyHours[weekKey] = 0;
+            weeklyHours[weekKey] += duration;
+        });
+
+        // Base Pay
+        const basePay = baseHours * hourlyWage;
+        // Night Pay (0.5x extra)
+        const nightPay = nightHours * hourlyWage * 0.5;
+
+        // Weekly Holiday Pay (주휴수당)
+        let weeklyHolidayPay = 0;
+        let eligibleWeeks = 0;
+        Object.values(weeklyHours).forEach(hours => {
+            if (hours >= 15) {
+                eligibleWeeks++;
+                weeklyHolidayPay += (Math.min(hours, 40) / 5) * hourlyWage;
+            }
+        });
+
+        const totalPay = Math.floor(basePay + nightPay + weeklyHolidayPay);
+
+        return {
+            baseHours,
+            nightHours,
+            basePay: Math.floor(basePay),
+            nightPay: Math.floor(nightPay),
+            weeklyHolidayPay: Math.floor(weeklyHolidayPay),
+            totalPay,
+            eligibleWeeks
+        };
+    }, [logs, hourlyWage]);
+
     return (
         <div className="flex flex-col gap-8">
             <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <span className="material-symbols-outlined text-emerald-500">payments</span>
-                급여 계산
+                급여 계산 (주휴·야간수당 적용)
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -72,27 +118,38 @@ export default function SalaryCalculator() {
                 </div>
             </div>
 
+            {/* Receipt Style UI */}
             <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-6 text-white shadow-lg shadow-blue-500/30">
                 <p className="text-blue-100 font-medium mb-1">예상 급여 총액</p>
-                <h3 className="text-4xl font-black mb-4 tracking-tight">
-                    {formatCurrency(totalSalary)}
+                <h3 className="text-4xl font-black mb-6 tracking-tight">
+                    {formatCurrency(salaryData.totalPay)}
                 </h3>
-                <div className="flex items-center gap-4 text-sm text-blue-100 bg-white/10 p-3 rounded-lg backdrop-blur-sm">
-                    <div className="flex flex-col">
-                        <span className="opacity-70 text-xs">총 근무 시간</span>
-                        <span className="font-bold text-lg">{totalHours.toFixed(1)}시간</span>
+                
+                <div className="bg-white/10 rounded-xl p-4 flex flex-col gap-3 text-sm backdrop-blur-sm">
+                    <div className="flex justify-between items-center">
+                        <span className="text-blue-100">기본급 ({salaryData.baseHours.toFixed(1)}시간)</span>
+                        <span className="font-bold">{formatCurrency(salaryData.basePay)}</span>
                     </div>
-                    <div className="w-px h-8 bg-white/20"></div>
-                    <div className="flex flex-col">
-                        <span className="opacity-70 text-xs">적용 시급</span>
-                        <span className="font-bold text-lg">{formatCurrency(hourlyWage).replace('원', '')}</span>
+                    <div className="flex justify-between items-center">
+                        <span className="text-blue-100">주휴수당 (적용 {salaryData.eligibleWeeks}주)</span>
+                        <span className="font-bold">{formatCurrency(salaryData.weeklyHolidayPay)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <span className="text-blue-100">야간수당 (가산 {salaryData.nightHours.toFixed(1)}시간)</span>
+                        <span className="font-bold">{formatCurrency(salaryData.nightPay)}</span>
+                    </div>
+                    <div className="h-px bg-white/20 my-1"></div>
+                    <div className="flex justify-between items-center text-xs text-blue-200">
+                        <span>적용 시급</span>
+                        <span>{formatCurrency(hourlyWage).replace('원', '')}</span>
                     </div>
                 </div>
-                <p className="mt-4 text-xs text-blue-200 opacity-80">
-                    * 주휴수당 및 세금은 포함되지 않은 단순 계산 금액입니다.
+                <p className="mt-4 text-xs text-blue-200 opacity-80 text-center">
+                    * 세금(3.3% 또는 4대보험)은 포함되지 않은 예상 금액입니다.
                 </p>
             </div>
 
+            {/* Logs List */}
             <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
                 <h3 className="text-base font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                     <span className="material-symbols-outlined text-slate-400">calendar_month</span>
@@ -126,9 +183,14 @@ export default function SalaryCalculator() {
                                                 휴게 {log.breakDuration || 60}분
                                             </span>
                                         )}
-                                        <span className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                                            {calculateDuration(log.start, log.end, log.break ? log.breakDuration || 60 : 0).toFixed(1)} 시간
-                                        </span>
+                                        <div className="text-right">
+                                            <span className="text-sm font-bold text-slate-700 dark:text-slate-300 block">
+                                                {calculateDuration(log.start, log.end, log.break ? log.breakDuration || 60 : 0).toFixed(1)} 시간
+                                            </span>
+                                            {calculateNightHours(log.start, log.end) > 0 && (
+                                                <span className="text-[10px] text-purple-500 font-medium">야간포함</span>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             ))}

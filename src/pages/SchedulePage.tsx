@@ -4,6 +4,7 @@ import ScheduleCalendar from "../components/ScheduleCalendar";
 import ScheduleTableView from "../components/ScheduleTableView";
 import ScheduleComments from "../components/ScheduleComments";
 import ScheduleUpload from "../components/ScheduleUpload";
+import ShiftSwapBoard from "../components/ShiftSwapBoard";
 import { MainLayout } from "../components/layout";
 import { useAuth } from "../context/AuthContext";
 
@@ -56,20 +57,26 @@ export default function SchedulePage() {
                 )}
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Admin Upload Section - Only visible to boss/admin */}
-                {isBossOrAdmin && (
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                {/* Left Column: Swaps & Upload */}
+                <div className="flex flex-col gap-8 xl:col-span-1">
                     <div className="bg-white dark:bg-[#1e2936] rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-                        <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                            <span className="material-symbols-outlined text-blue-500">upload_file</span>
-                            시간표 업로드
-                        </h2>
-                        <ScheduleUpload />
+                        <ShiftSwapBoard />
                     </div>
-                )}
 
-                {/* Comments */}
-                <div className="bg-white dark:bg-[#1e2936] rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                    {isBossOrAdmin && (
+                        <div className="bg-white dark:bg-[#1e2936] rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
+                            <h2 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                                <span className="material-symbols-outlined text-blue-500">upload_file</span>
+                                시간표 업로드
+                            </h2>
+                            <ScheduleUpload />
+                        </div>
+                    )}
+                </div>
+
+                {/* Right Column: Comments */}
+                <div className="bg-white dark:bg-[#1e2936] rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 xl:col-span-2">
                     <ScheduleComments />
                 </div>
             </div>

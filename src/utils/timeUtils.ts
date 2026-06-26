@@ -28,3 +28,32 @@ export const calculateDuration = (start: string, end: string, breakDurationMinut
 export const formatCurrency = (amount: number): string => {
     return new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(amount);
 };
+
+export const calculateNightHours = (start: string, end: string): number => {
+    if (!start || !end) return 0;
+
+    const [startH, startM] = start.split(":").map(Number);
+    const [endH, endM] = end.split(":").map(Number);
+
+    const startDate = new Date(0, 0, 0, startH, startM);
+    const endDate = new Date(0, 0, 0, endH, endM);
+
+    if (endDate < startDate) {
+        endDate.setDate(endDate.getDate() + 1);
+    }
+
+    let nightMs = 0;
+
+    // Check every minute from start to end
+    const current = new Date(startDate);
+    while (current < endDate) {
+        const hour = current.getHours();
+        // Night is 22:00 to 06:00
+        if (hour >= 22 || hour < 6) {
+            nightMs += 60 * 1000;
+        }
+        current.setMinutes(current.getMinutes() + 1);
+    }
+
+    return nightMs / (1000 * 60 * 60);
+};

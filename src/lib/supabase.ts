@@ -55,3 +55,12 @@ export interface DbNotice {
     image_urls: string[] | null
     created_at: string
 }
+
+export interface DbShiftSwap {
+    id: string
+    schedule_id: string
+    requester_name: string
+    acceptor_name: string | null
+    status: 'pending' | 'accepted' | 'approved' | 'rejected'
+    created_at: string
+}

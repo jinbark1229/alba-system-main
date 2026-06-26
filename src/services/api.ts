@@ -49,6 +49,26 @@ export const getLogs = async (userName: string): Promise<WorkLog[]> => {
     }));
 };
 
+export const getAllLogs = async (): Promise<WorkLog[]> => {
+    const { data, error } = await supabase
+        .from('work_logs')
+        .select('*')
+        .order('date', { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []).map((log: DbWorkLog) => ({
+        id: log.id,
+        date: log.date,
+        start: log.start_time,
+        end: log.end_time,
+        break: log.break_duration > 0,
+        userName: log.user_name,
+        breakDuration: log.break_duration,
+        note: log.note || undefined
+    }));
+};
+
 export const deleteLog = async (logId: string) => {
     const { error } = await supabase
         .from('work_logs')
@@ -322,4 +342,79 @@ export const uploadImage = async (file: File): Promise<string> => {
 
 export const uploadImages = async (files: File[]): Promise<string[]> => {
     return Promise.all(files.map(uploadImage));
+};
+
+// ============ Shift Swaps ============
+export interface ShiftSwap {
+    id: string;
+    scheduleId: string;
+    requesterName: string;
+    acceptorName: string | null;
+    status: 'pending' | 'accepted' | 'approved' | 'rejected';
+    createdAt: string;
+}
+
+export const getShiftSwaps = async (): Promise<ShiftSwap[]> => {
+    const { data, error } = await supabase
+        .from('shift_swaps')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []).map((s: any) => ({
+        id: s.id,
+        scheduleId: s.schedule_id,
+        requesterName: s.requester_name,
+        acceptorName: s.acceptor_name,
+        status: s.status,
+        createdAt: s.created_at
+    }));
+};
+
+export const requestShiftSwap = async (scheduleId: string, requesterName: string) => {
+    const { error } = await supabase
+        .from('shift_swaps')
+        .insert({
+            schedule_id: scheduleId,
+            requester_name: requesterName
+        });
+
+    if (error) throw error;
+};
+
+export const acceptShiftSwap = async (swapId: string, acceptorName: string) => {
+    const { error } = await supabase
+        .from('shift_swaps')
+        .update({ acceptor_name: acceptorName, status: 'accepted' })
+        .eq('id', swapId);
+
+    if (error) throw error;
+};
+
+export const approveShiftSwap = async (swapId: string, scheduleId: string, acceptorName: string) => {
+    // 1. Update schedule name
+    const { error: scheduleError } = await supabase
+        .from('schedules')
+        .update({ name: acceptorName })
+        .eq('id', scheduleId);
+
+    if (scheduleError) throw scheduleError;
+
+    // 2. Update swap status
+    const { error: swapError } = await supabase
+        .from('shift_swaps')
+        .update({ status: 'approved' })
+        .eq('id', swapId);
+
+    if (swapError) throw swapError;
+};
+
+export const rejectShiftSwap = async (swapId: string) => {
+    const { error } = await supabase
+        .from('shift_swaps')
+        .update({ status: 'rejected' })
+        .eq('id', swapId);
+
+    if (error) throw error;
 };

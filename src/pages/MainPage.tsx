@@ -2,13 +2,23 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { MainLayout } from "../components/layout";
+import DashboardCharts from "../components/DashboardCharts";
 
 export default function MainPage() {
     const { user, withdraw } = useAuth();
+    const isBossOrAdmin = user?.role === 'boss' || user?.role === 'admin';
 
     if (user) {
         return (
             <MainLayout title="홈" description={`${user.name}님, 오늘도 좋은 하루 되세요!`}>
+                
+                {/* Analytics Dashboard - Only for Boss/Admin */}
+                {isBossOrAdmin && (
+                    <div className="mb-8">
+                        <DashboardCharts />
+                    </div>
+                )}
+
                 {/* Dashboard Widgets */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {/* Worker: Daily Log Widget */}
