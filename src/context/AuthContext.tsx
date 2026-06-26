@@ -19,6 +19,7 @@ export interface AllowedName {
     storeId: "store1" | "store2" | "both";
     addedAt: string;
     registrationCode: string;
+    hourlyWage: number;
 }
 
 interface AuthContextProps {
@@ -31,7 +32,7 @@ interface AuthContextProps {
     removeUser: (userId: string) => Promise<void>;
     resetPassword: (userName: string) => Promise<boolean>;
     listUsers: () => User[];
-    addAllowedName: (name: string, role: "worker" | "manager" | "boss", storeId: "store1" | "store2" | "both") => Promise<{ success: boolean; code?: string; message?: string }>;
+    addAllowedName: (name: string, role: "worker" | "manager" | "boss", storeId: "store1" | "store2" | "both", hourlyWage?: number) => Promise<{ success: boolean; code?: string; message?: string }>;
     removeAllowedName: (name: string) => Promise<void>;
     getAllowedNames: () => AllowedName[];
     isNameAllowed: (name: string) => boolean;
@@ -99,7 +100,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     role: a.role,
                     storeId: a.store_id,
                     addedAt: a.added_at,
-                    registrationCode: a.registration_code
+                    registrationCode: a.registration_code,
+                    hourlyWage: a.hourly_wage
                 }));
                 setAllowedNames(mappedAllowed);
 
@@ -229,7 +231,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const listUsers = () => users;
 
-    const addAllowedName = async (name: string, role: "worker" | "manager" | "boss", storeId: "store1" | "store2" | "both"): Promise<{ success: boolean; code?: string; message?: string }> => {
+    const addAllowedName = async (name: string, role: "worker" | "manager" | "boss", storeId: "store1" | "store2" | "both", hourlyWage: number = 9860): Promise<{ success: boolean; code?: string; message?: string }> => {
         if (allowedNames.some(a => a.name === name)) {
             return { success: false };
         }
@@ -243,7 +245,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 name,
                 role,
                 store_id: storeId,
-                registration_code: newCode
+                registration_code: newCode,
+                hourly_wage: hourlyWage
             });
 
         if (error) {
@@ -256,7 +259,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             role,
             storeId,
             addedAt: new Date().toISOString().slice(0, 10),
-            registrationCode: newCode
+            registrationCode: newCode,
+            hourlyWage
         };
         setAllowedNames([...allowedNames, newAllowed]);
         return { success: true, code: newCode };

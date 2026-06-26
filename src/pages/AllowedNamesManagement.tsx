@@ -11,6 +11,7 @@ export default function AllowedNamesManagement() {
     const [newName, setNewName] = useState("");
     const [newRole, setNewRole] = useState<"worker" | "manager" | "boss">("worker");
     const [newStoreId, setNewStoreId] = useState<"store1" | "store2" | "both">("store1");
+    const [newHourlyWage, setNewHourlyWage] = useState<number>(9860);
 
     // Wait for auth context to finish loading before checking role
     if (isLoading) {
@@ -46,12 +47,13 @@ export default function AllowedNamesManagement() {
             return;
         }
 
-        const result = await addAllowedName(newName.trim(), newRole, newStoreId);
+        const result = await addAllowedName(newName.trim(), newRole, newStoreId, newHourlyWage);
         if (result.success) {
             alert(`"${newName}" 등록 완료!\n\n개인 인증코드: ${result.code}\n\n이 코드를 해당 직원에게 전달해주세요.`);
             setNewName("");
             setNewRole("worker");
             setNewStoreId("store1");
+            setNewHourlyWage(9860);
         } else {
             alert(result.message || "이미 등록된 이름이거나 데이터베이스 오류입니다.");
         }
@@ -159,6 +161,17 @@ export default function AllowedNamesManagement() {
                             <option value="both">둘 다</option>
                         </select>
                     </div>
+                    <div className="w-[120px] flex flex-col gap-2">
+                        <label className="text-sm font-medium text-slate-700 dark:text-slate-300">시급</label>
+                        <input
+                            type="number"
+                            value={newHourlyWage}
+                            onChange={(e) => setNewHourlyWage(Number(e.target.value))}
+                            className="w-full px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-[#1e2936] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                            min="0"
+                            step="10"
+                        />
+                    </div>
                     <button
                         type="submit"
                         className="px-6 py-2 h-[42px] bg-primary text-white font-medium rounded-lg hover:bg-blue-600 transition-colors shadow-sm"
@@ -183,6 +196,7 @@ export default function AllowedNamesManagement() {
                                 <th className="py-4 px-6 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">이름</th>
                                 <th className="py-4 px-6 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">역할</th>
                                 <th className="py-4 px-6 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">매장</th>
+                                <th className="py-4 px-6 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">시급</th>
                                 <th className="py-4 px-6 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">인증코드</th>
                                 <th className="py-4 px-6 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">가입 상태</th>
                                 <th className="py-4 px-6 text-xs font-semibold uppercase text-slate-500 dark:text-slate-400 text-right">관리</th>
@@ -191,7 +205,7 @@ export default function AllowedNamesManagement() {
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                             {allowedNames.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="py-8 text-center text-slate-500 dark:text-slate-400">
+                                    <td colSpan={7} className="py-8 text-center text-slate-500 dark:text-slate-400">
                                         등록된 이름이 없습니다.
                                     </td>
                                 </tr>
@@ -220,6 +234,9 @@ export default function AllowedNamesManagement() {
                                                 }`}>
                                                 {item.storeId === "store1" ? "연산점" : item.storeId === "store2" ? "부전점" : "둘 다"}
                                             </span>
+                                        </td>
+                                        <td className="py-4 px-6 text-sm font-medium text-slate-700 dark:text-slate-300">
+                                            {new Intl.NumberFormat('ko-KR').format(item.hourlyWage || 9860)}원
                                         </td>
                                         <td className="py-4 px-6">
                                             <div className="flex items-center gap-2">

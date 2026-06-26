@@ -1,6 +1,6 @@
 // src/components/DashboardCharts.tsx
 import { useState, useEffect, useMemo } from "react";
-import { getAllLogs, type WorkLog } from "../services/api";
+import { getAllLogs, getAllWages, type WorkLog } from "../services/api";
 import { calculateDuration } from "../utils/timeUtils";
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -11,22 +11,27 @@ const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8B5CF6', '#F43F5E'
 
 export default function DashboardCharts() {
     const [logs, setLogs] = useState<WorkLog[]>([]);
+    const [wages, setWages] = useState<Record<string, number>>({});
     const [loading, setLoading] = useState(true);
     const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
 
     useEffect(() => {
-        const fetchLogs = async () => {
+        const fetchData = async () => {
             try {
                 setLoading(true);
-                const allLogs = await getAllLogs();
+                const [allLogs, allWages] = await Promise.all([
+                    getAllLogs(),
+                    getAllWages()
+                ]);
                 setLogs(allLogs);
+                setWages(allWages);
             } catch (error) {
-                console.error("Failed to fetch all logs", error);
+                console.error("Failed to fetch dashboard data", error);
             } finally {
                 setLoading(false);
             }
         };
-        fetchLogs();
+        fetchData();
     }, []);
 
     // Filter logs by selected month
@@ -37,7 +42,6 @@ export default function DashboardCharts() {
     // Data processing for charts
     const chartData = useMemo(() => {
         const userStats: Record<string, { hours: number, pay: number }> = {};
-        const HOURLY_WAGE = 9860; // Assuming default
 
         monthlyLogs.forEach(log => {
             const duration = calculateDuration(log.start, log.end, log.break ? (log.breakDuration || 60) : 0);
@@ -45,8 +49,10 @@ export default function DashboardCharts() {
                 userStats[log.userName] = { hours: 0, pay: 0 };
             }
             userStats[log.userName].hours += duration;
+            
             // Simple pay estimation for chart (ignoring night/holiday for dashboard simplicity)
-            userStats[log.userName].pay += duration * HOURLY_WAGE;
+            const hourlyWage = wages[log.userName] || 9860;
+            userStats[log.userName].pay += duration * hourlyWage;
         });
 
         const dataArray = Object.entries(userStats).map(([name, stats]) => ({
@@ -56,7 +62,7 @@ export default function DashboardCharts() {
         })).sort((a, b) => b.hours - a.hours);
 
         return dataArray;
-    }, [monthlyLogs]);
+    }, [monthlyLogs, wages]);
 
     if (loading) {
         return <div className="p-8 text-center text-slate-500">데이터를 불러오는 중...</div>;

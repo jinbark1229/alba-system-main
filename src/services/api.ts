@@ -69,6 +69,32 @@ export const getAllLogs = async (): Promise<WorkLog[]> => {
     }));
 };
 
+// --- Wage Information ---
+export const getUserWage = async (userName: string): Promise<number> => {
+    const { data, error } = await supabase
+        .from('allowed_names')
+        .select('hourly_wage')
+        .eq('name', userName)
+        .single();
+    
+    if (error || !data) return 9860;
+    return data.hourly_wage;
+};
+
+export const getAllWages = async (): Promise<Record<string, number>> => {
+    const { data, error } = await supabase
+        .from('allowed_names')
+        .select('name, hourly_wage');
+    
+    if (error || !data) return {};
+    
+    const wageMap: Record<string, number> = {};
+    data.forEach((row: any) => {
+        wageMap[row.name] = row.hourly_wage;
+    });
+    return wageMap;
+};
+
 export const deleteLog = async (logId: string) => {
     const { error } = await supabase
         .from('work_logs')

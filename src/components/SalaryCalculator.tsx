@@ -1,6 +1,5 @@
-// src/components/SalaryCalculator.tsx
 import { useState, useEffect, useMemo } from "react";
-import { getLogs, type WorkLog } from "../services/api";
+import { getLogs, getUserWage, type WorkLog } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { calculateDuration, calculateNightHours, formatCurrency } from "../utils/timeUtils";
 
@@ -20,19 +19,24 @@ export default function SalaryCalculator() {
     const [logs, setLogs] = useState<WorkLog[]>([]);
 
     useEffect(() => {
-        const fetchLogs = async () => {
+        const fetchLogsAndWage = async () => {
             if (!user) return;
             try {
+                // Fetch individual wage
+                const wage = await getUserWage(user.name);
+                setHourlyWage(wage);
+
+                // Fetch logs
                 const allLogs = await getLogs(user.name);
                 const filteredLogs = allLogs.filter((log: WorkLog) =>
                     log.date.startsWith(selectedMonth)
                 );
                 setLogs(filteredLogs);
             } catch (error) {
-                console.error("Failed to fetch logs", error);
+                console.error("Failed to fetch data", error);
             }
         };
-        fetchLogs();
+        fetchLogsAndWage();
     }, [selectedMonth, user]);
 
     // Calculations

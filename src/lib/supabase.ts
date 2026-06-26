@@ -22,6 +22,7 @@ export interface DbAllowedName {
     role: 'worker' | 'manager' | 'boss'
     store_id: 'store1' | 'store2' | 'both'
     registration_code: string
+    hourly_wage: number
     added_at: string
 }
 
