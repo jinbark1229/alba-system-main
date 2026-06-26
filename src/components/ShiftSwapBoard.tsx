@@ -1,6 +1,6 @@
 // src/components/ShiftSwapBoard.tsx
 import { useState, useEffect } from "react";
-import { getSchedules, type Schedule, getShiftSwaps, type ShiftSwap, requestShiftSwap, acceptShiftSwap, approveShiftSwap, rejectShiftSwap } from "../services/api";
+import { getSchedules, type Schedule, getShiftSwaps, type ShiftSwap, requestShiftSwap, acceptShiftSwap, approveShiftSwap, rejectShiftSwap, cancelShiftSwap } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
 
@@ -72,6 +72,15 @@ export default function ShiftSwapBoard() {
             await rejectShiftSwap(swapId);
         } catch (error) {
             alert("거절 중 오류가 발생했습니다.");
+        }
+    };
+
+    const handleCancel = async (swapId: string) => {
+        if (!window.confirm("이 대타 요청을 취소하시겠습니까?")) return;
+        try {
+            await cancelShiftSwap(swapId);
+        } catch (error) {
+            alert("요청 취소 중 오류가 발생했습니다.");
         }
     };
 
@@ -196,6 +205,33 @@ export default function ShiftSwapBoard() {
                                 <span className="text-xs font-medium text-slate-500">대기중</span>
                             </div>
                         ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Workers: My Pending Swaps */}
+            {user?.role === 'worker' && (
+                <div>
+                    <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-1">
+                        <span className="material-symbols-outlined text-sm text-blue-500">pending_actions</span>
+                        내가 요청한 대타 (대기 중)
+                    </h3>
+                    <div className="flex flex-col gap-2">
+                        {myPendingSwaps.length === 0 ? (
+                            <p className="text-xs text-slate-500">요청한 대타가 없습니다.</p>
+                        ) : (
+                            myPendingSwaps.map(swap => (
+                                <div key={swap.id} className="p-3 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/50 rounded-lg flex items-center justify-between gap-4">
+                                    <div className="text-sm">
+                                        <p className="font-bold text-slate-800 dark:text-slate-200">{getScheduleText(swap.scheduleId)}</p>
+                                        <p className="text-slate-600 dark:text-slate-400 text-xs">수락 대기 중...</p>
+                                    </div>
+                                    <button onClick={() => handleCancel(swap.id)} className="px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-xs rounded font-medium shrink-0">
+                                        요청 취소
+                                    </button>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </div>
             )}

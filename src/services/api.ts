@@ -409,6 +409,15 @@ export const requestShiftSwap = async (scheduleId: string, requesterName: string
     if (error) throw error;
 };
 
+export const cancelShiftSwap = async (swapId: string) => {
+    const { error } = await supabase
+        .from('shift_swaps')
+        .delete()
+        .eq('id', swapId);
+
+    if (error) throw error;
+};
+
 export const acceptShiftSwap = async (swapId: string, acceptorName: string) => {
     const { error } = await supabase
         .from('shift_swaps')
