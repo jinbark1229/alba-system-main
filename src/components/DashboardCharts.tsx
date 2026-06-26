@@ -6,6 +6,7 @@ import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     PieChart, Pie, Cell, Legend
 } from 'recharts';
+import { supabase } from "../lib/supabase";
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8B5CF6', '#F43F5E', '#10B981'];
 
@@ -32,6 +33,16 @@ export default function DashboardCharts() {
             }
         };
         fetchData();
+
+        const channel = supabase.channel('work_logs_changes_dashboard')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'work_logs' }, () => {
+                fetchData();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     // Filter logs by selected month

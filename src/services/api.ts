@@ -453,3 +453,43 @@ export const rejectShiftSwap = async (swapId: string) => {
 
     if (error) throw error;
 };
+
+export interface ScheduleComment {
+    id: string;
+    author: string;
+    content: string;
+    storeId: string | null;
+    createdAt: string;
+}
+
+export const getComments = async (): Promise<ScheduleComment[]> => {
+    const { data, error } = await supabase
+        .from('comments')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    return (data || []).map((c: any) => ({
+        id: c.id,
+        author: c.author,
+        content: c.content,
+        storeId: c.store_id,
+        createdAt: c.created_at
+    }));
+};
+
+export const addComment = async (author: string, content: string, storeId: string | null) => {
+    const { error } = await supabase
+        .from('comments')
+        .insert({ author, content, store_id: storeId });
+    if (error) throw error;
+};
+
+export const deleteComment = async (id: string) => {
+    const { error } = await supabase
+        .from('comments')
+        .delete()
+        .eq('id', id);
+    if (error) throw error;
+};

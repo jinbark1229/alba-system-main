@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { getLogs, type WorkLog } from "../services/api";
 import { useAuth } from "../context/AuthContext";
+import { supabase } from "../lib/supabase";
 
 export default function LogList() {
     const { user } = useAuth();
@@ -21,6 +22,16 @@ export default function LogList() {
             }
         }
         fetchLogs();
+
+        const channel = supabase.channel('work_logs_changes_list')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'work_logs' }, () => {
+                fetchLogs();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, [user]);
 
     if (loading) {

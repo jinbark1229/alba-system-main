@@ -1,15 +1,8 @@
 // src/components/ScheduleComments.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-
-interface Comment {
-    id: string;
-    author: string;
-    content: string;
-    date: string;
-    timestamp: number;
-    storeId: 'store1' | 'store2';
-}
+import { getComments, addComment, deleteComment, type ScheduleComment } from '../services/api';
+import { supabase } from '../lib/supabase';
 
 export default function ScheduleComments() {
     const { user } = useAuth();
@@ -19,40 +12,51 @@ export default function ScheduleComments() {
     const isBossOrAdmin = user?.role === 'boss' || user?.role === 'admin';
     const canToggleStore = isBossOrAdmin || user?.storeId === 'both';
 
-    const [comments, setComments] = useState<Comment[]>(() => {
-        const saved = localStorage.getItem('schedule_comments');
-        return saved ? JSON.parse(saved) : [];
-    });
+    const [comments, setComments] = useState<ScheduleComment[]>([]);
     const [newComment, setNewComment] = useState("");
 
-    const handleAddComment = (e: React.FormEvent) => {
+    useEffect(() => {
+        fetchComments();
+
+        const channel = supabase.channel('comments_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'comments' }, () => {
+                fetchComments();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, []);
+
+    const fetchComments = async () => {
+        try {
+            const data = await getComments();
+            setComments(data);
+        } catch (error) {
+            console.error("Failed to fetch comments", error);
+        }
+    };
+
+    const handleAddComment = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newComment.trim() || !user) return;
 
-        const comment: Comment = {
-            id: Date.now().toString(),
-            author: user.name,
-            content: newComment,
-            date: new Date().toLocaleDateString(),
-            timestamp: Date.now(),
-            storeId: currentStore,
-        };
-
-        const currentAllComments = JSON.parse(localStorage.getItem('schedule_comments') || '[]');
-        const updatedAllComments = [comment, ...currentAllComments];
-
-        setComments(updatedAllComments);
-        localStorage.setItem('schedule_comments', JSON.stringify(updatedAllComments));
-        setNewComment("");
+        try {
+            await addComment(user.name, newComment, currentStore);
+            setNewComment("");
+        } catch (error) {
+            alert("댓글 등록 실패");
+        }
     };
 
-    const handleDelete = (id: string) => {
+    const handleDelete = async (id: string) => {
         if (!window.confirm("정말 삭제하시겠습니까?")) return;
-        const currentAllComments = JSON.parse(localStorage.getItem('schedule_comments') || '[]');
-        const updatedComments = currentAllComments.filter((c: Comment) => c.id !== id);
-
-        setComments(updatedComments);
-        localStorage.setItem('schedule_comments', JSON.stringify(updatedComments));
+        try {
+            await deleteComment(id);
+        } catch (error) {
+            alert("삭제 실패");
+        }
     };
 
     const displayedComments = comments.filter(c =>
@@ -122,7 +126,7 @@ export default function ScheduleComments() {
                                         {comment.author.charAt(0)}
                                     </div>
                                     <span className="text-sm font-bold text-slate-900 dark:text-white">{comment.author}</span>
-                                    <span className="text-xs text-slate-400">{comment.date}</span>
+                                    <span className="text-xs text-slate-400">{new Date(comment.createdAt).toLocaleDateString()}</span>
                                 </div>
                                 {(user?.name === comment.author || user?.role === 'boss') && (
                                     <button
