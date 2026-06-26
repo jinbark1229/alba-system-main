@@ -207,13 +207,7 @@ export default function MainPage() {
                             color="text-amber-500"
                             bg="bg-amber-50 dark:bg-amber-900/20"
                         />
-                        <FeatureCard
-                            icon="autorenew"
-                            title="반복 업무 자동화"
-                            description="매주 반복되는 스케줄은 템플릿으로 설정하세요. 자동으로 일지가 생성됩니다."
-                            color="text-cyan-500"
-                            bg="bg-cyan-50 dark:bg-cyan-900/20"
-                        />
+
                         <FeatureCard
                             icon="campaign"
                             title="공지사항 게시판"

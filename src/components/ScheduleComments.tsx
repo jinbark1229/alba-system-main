@@ -11,12 +11,14 @@ interface Comment {
     storeId: 'store1' | 'store2';
 }
 
-interface ScheduleCommentsProps {
-    storeId: 'store1' | 'store2';
-}
-
-export default function ScheduleComments({ storeId }: ScheduleCommentsProps) {
+export default function ScheduleComments() {
     const { user } = useAuth();
+    const [currentStore, setCurrentStore] = useState<'store1' | 'store2'>(
+        user?.storeId === 'store2' ? 'store2' : 'store1'
+    );
+    const isBossOrAdmin = user?.role === 'boss' || user?.role === 'admin';
+    const canToggleStore = isBossOrAdmin || user?.storeId === 'both';
+
     const [comments, setComments] = useState<Comment[]>(() => {
         const saved = localStorage.getItem('schedule_comments');
         return saved ? JSON.parse(saved) : [];
@@ -33,7 +35,7 @@ export default function ScheduleComments({ storeId }: ScheduleCommentsProps) {
             content: newComment,
             date: new Date().toLocaleDateString(),
             timestamp: Date.now(),
-            storeId: storeId,
+            storeId: currentStore,
         };
 
         const currentAllComments = JSON.parse(localStorage.getItem('schedule_comments') || '[]');
@@ -54,15 +56,33 @@ export default function ScheduleComments({ storeId }: ScheduleCommentsProps) {
     };
 
     const displayedComments = comments.filter(c =>
-        (c.storeId === storeId) || (!c.storeId && storeId === 'store1')
+        (c.storeId === currentStore) || (!c.storeId && currentStore === 'store1')
     );
 
     return (
         <div className="flex flex-col h-full">
+            {canToggleStore && (
+                <div className="flex justify-end mb-4">
+                    <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-lg inline-flex">
+                        <button
+                            onClick={() => setCurrentStore('store1')}
+                            className={`px-3 py-1 text-sm font-bold rounded-md transition-all ${currentStore === 'store1' ? 'bg-white dark:bg-slate-600 shadow-sm text-primary' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                        >
+                            연산점
+                        </button>
+                        <button
+                            onClick={() => setCurrentStore('store2')}
+                            className={`px-3 py-1 text-sm font-bold rounded-md transition-all ${currentStore === 'store2' ? 'bg-white dark:bg-slate-600 shadow-sm text-primary' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                        >
+                            부전점
+                        </button>
+                    </div>
+                </div>
+            )}
             <div className="mb-4">
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                     <span className="material-symbols-outlined text-amber-500">chat</span>
-                    {storeId === 'store1' ? '연산점' : '부전점'} 대타/변경 요청
+                    {currentStore === 'store1' ? '연산점' : '부전점'} 대타/변경 요청
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                     근무 변경이나 대타가 필요하면 자유롭게 남겨주세요.
@@ -74,7 +94,7 @@ export default function ScheduleComments({ storeId }: ScheduleCommentsProps) {
                     <textarea
                         value={newComment}
                         onChange={(e) => setNewComment(e.target.value)}
-                        placeholder={`${storeId === 'store1' ? '연산점' : '부전점'} 대타 구합니다...`}
+                        placeholder={`${currentStore === 'store1' ? '연산점' : '부전점'} 대타 구합니다...`}
                         rows={3}
                         required
                         className="w-full px-4 py-3 pb-12 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#1a2632] text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all resize-none shadow-inner"

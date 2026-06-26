@@ -53,7 +53,7 @@ export default function AllowedNamesManagement() {
             setNewRole("worker");
             setNewStoreId("store1");
         } else {
-            alert("이미 등록된 이름입니다.");
+            alert(result.message || "이미 등록된 이름이거나 데이터베이스 오류입니다.");
         }
     };
 

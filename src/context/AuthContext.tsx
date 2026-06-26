@@ -31,7 +31,7 @@ interface AuthContextProps {
     removeUser: (userId: string) => Promise<void>;
     resetPassword: (userName: string) => Promise<boolean>;
     listUsers: () => User[];
-    addAllowedName: (name: string, role: "worker" | "manager" | "boss", storeId: "store1" | "store2" | "both") => Promise<{ success: boolean; code?: string }>;
+    addAllowedName: (name: string, role: "worker" | "manager" | "boss", storeId: "store1" | "store2" | "both") => Promise<{ success: boolean; code?: string; message?: string }>;
     removeAllowedName: (name: string) => Promise<void>;
     getAllowedNames: () => AllowedName[];
     isNameAllowed: (name: string) => boolean;
@@ -229,7 +229,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const listUsers = () => users;
 
-    const addAllowedName = async (name: string, role: "worker" | "manager" | "boss", storeId: "store1" | "store2" | "both"): Promise<{ success: boolean; code?: string }> => {
+    const addAllowedName = async (name: string, role: "worker" | "manager" | "boss", storeId: "store1" | "store2" | "both"): Promise<{ success: boolean; code?: string; message?: string }> => {
         if (allowedNames.some(a => a.name === name)) {
             return { success: false };
         }
@@ -248,7 +248,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         if (error) {
             console.error('Error adding allowed name:', error);
-            return { success: false };
+            return { success: false, message: error.message };
         }
 
         const newAllowed: AllowedName = {
