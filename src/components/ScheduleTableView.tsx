@@ -35,7 +35,14 @@ export default function ScheduleTableView() {
             })
             .subscribe();
 
-        return () => { supabase.removeChannel(channel); };
+        // Custom event fallback for same-tab updates
+        const handleCustomEvent = () => fetchSchedules();
+        window.addEventListener('schedulesUpdated', handleCustomEvent);
+
+        return () => { 
+            supabase.removeChannel(channel);
+            window.removeEventListener('schedulesUpdated', handleCustomEvent);
+        };
     }, [user]);
 
     // Get week dates

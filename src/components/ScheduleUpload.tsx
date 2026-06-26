@@ -34,8 +34,9 @@ export default function ScheduleUpload() {
             await uploadSchedules(fileToUpload, storeId);
             alert(`${storeId === 'store1' ? '연산점' : '부전점'} 시간표가 업로드되었습니다.`);
             setFile(null);
-            // const all = await getAllSchedules();
-            // setSchedules(all);
+            
+            // Notify sibling components to refresh
+            window.dispatchEvent(new Event('schedulesUpdated'));
         } catch (error) {
             console.error(error);
             alert("업로드 실패: " + error);

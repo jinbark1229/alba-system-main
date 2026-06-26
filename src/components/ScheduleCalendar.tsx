@@ -37,7 +37,14 @@ export default function ScheduleCalendar() {
             })
             .subscribe();
 
-        return () => { supabase.removeChannel(channel); };
+        // Custom event fallback for same-tab updates
+        const handleCustomEvent = () => fetchSchedules();
+        window.addEventListener('schedulesUpdated', handleCustomEvent);
+
+        return () => { 
+            supabase.removeChannel(channel);
+            window.removeEventListener('schedulesUpdated', handleCustomEvent);
+        };
     }, [year, month, user]);
 
     const daysInMonth = new Date(year, month + 1, 0).getDate();
