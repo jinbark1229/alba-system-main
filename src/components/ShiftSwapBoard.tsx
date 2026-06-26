@@ -48,8 +48,20 @@ export default function ShiftSwapBoard() {
         }
     };
 
-    const handleAccept = async (swapId: string) => {
-        if (!user || !window.confirm("정말 이 대타를 수락하시겠습니까?")) return;
+    const handleAccept = async (swapId: string, scheduleId: string) => {
+        if (!user) return;
+
+        // Check for same-day conflict
+        const targetSchedule = schedules.find(x => x.id === scheduleId);
+        if (targetSchedule) {
+            const hasConflict = schedules.some(s => s.name === user.name && s.date === targetSchedule.date);
+            if (hasConflict) {
+                alert("같은 날짜에 이미 배정된 근무가 있어서 대타를 수락할 수 없습니다.");
+                return;
+            }
+        }
+
+        if (!window.confirm("정말 이 대타를 수락하시겠습니까?")) return;
         try {
             await acceptShiftSwap(swapId, user.name);
         } catch (error) {
@@ -173,17 +185,27 @@ export default function ShiftSwapBoard() {
                         {availableSwaps.length === 0 ? (
                             <p className="text-xs text-slate-500">구하고 있는 대타가 없습니다.</p>
                         ) : (
-                            availableSwaps.map(swap => (
-                                <div key={swap.id} className="p-3 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800/50 rounded-lg flex items-center justify-between gap-4">
-                                    <div className="text-sm">
-                                        <p className="font-bold text-slate-800 dark:text-slate-200">{getScheduleText(swap.scheduleId)}</p>
-                                        <p className="text-slate-600 dark:text-slate-400 text-xs">요청자: <span className="font-bold">{swap.requesterName}</span></p>
+                            availableSwaps.map(swap => {
+                                const targetSchedule = schedules.find(x => x.id === swap.scheduleId);
+                                const hasConflict = targetSchedule && schedules.some(s => s.name === user?.name && s.date === targetSchedule.date);
+
+                                return (
+                                    <div key={swap.id} className={`p-3 border rounded-lg flex items-center justify-between gap-4 ${hasConflict ? 'bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 opacity-60' : 'bg-emerald-50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800/50'}`}>
+                                        <div className="text-sm">
+                                            <p className={`font-bold ${hasConflict ? 'text-slate-600 dark:text-slate-400' : 'text-slate-800 dark:text-slate-200'}`}>{getScheduleText(swap.scheduleId)}</p>
+                                            <p className="text-slate-500 text-xs">요청자: <span className="font-bold">{swap.requesterName}</span></p>
+                                            {hasConflict && <p className="text-red-500 text-xs mt-1 font-medium">※ 같은 날 이미 근무가 있습니다.</p>}
+                                        </div>
+                                        <button 
+                                            onClick={() => handleAccept(swap.id, swap.scheduleId)} 
+                                            disabled={!!hasConflict}
+                                            className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white text-xs rounded font-medium shrink-0"
+                                        >
+                                            수락하기
+                                        </button>
                                     </div>
-                                    <button onClick={() => handleAccept(swap.id)} className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs rounded font-medium shrink-0">
-                                        수락하기
-                                    </button>
-                                </div>
-                            ))
+                                );
+                            })
                         )}
                     </div>
                 </div>
